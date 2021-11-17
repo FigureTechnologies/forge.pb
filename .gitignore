@@ -1,4 +1,1 @@
-pio-testnet-1/**
-pio-mainnet-1/**
-localnet/**
-provenance
+__pycache__
