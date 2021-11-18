@@ -1,28 +1,19 @@
 import os
 import stat
-
+from shutil import copyfile
 import re
 import git
-import json
 import requests
-from shutil import copyfile
 
-from utils import load_config, save_config
+import utils
+import global_
 
-NETWORK_STRINS = ["testnet", "mainnet", "localnet"]
-CHAIN_ID_STRINGS = ["pio-testnet-1", "pio-mainnet-1", "localnet"]
-TESTNET_SEEDS = "--testnet --p2p.seeds 2de841ce706e9b8cdff9af4f137e52a4de0a85b2@104.196.26.176:26656,add1d50d00c8ff79a6f7b9873cc0d9d20622614e@34.71.242.51:26656"
-MAINNET_SEEDS = "--p2p.seeds 4bd2fb0ae5a123f1db325960836004f980ee09b4@seed-0.provenance.io:26656,048b991204d7aac7209229cbe457f622eed96e5d@seed-1.provenance.io:26656"
-GENESIS_VERSION_TXT_URL = "https://raw.githubusercontent.com/provenance-io/{}/main/{}/genesis-version.txt"
-GENESIS_JSON_URL = "https://raw.githubusercontent.com/provenance-io/{}/main/{}/genesis.json"
-PROVENANCE_REPO = "https://github.com/provenance-io/provenance.git"
-CONFIG_PATH = os.path.join(os.path.expanduser('~'), ".pio")
-
-def bootstrap_node(environment, network, config):
+# Build a node in the given environment and network
+def build(environment, network, config):
     root_path = config['saveDir'] + "/pbpm"
     provenance_path = config['saveDir'] + "/pbpm" + "/provenance"
     # Get version information
-    release_tag = requests.get(GENESIS_VERSION_TXT_URL.format(network, environment))
+    release_tag = requests.get(global_.GENESIS_VERSION_TXT_URL.format(network, environment))
     if release_tag.status_code != 200:
         version = None
     else:
@@ -31,7 +22,7 @@ def bootstrap_node(environment, network, config):
     # Get git repo if it doesn't already exist
     if not os.path.exists(provenance_path):
         print("Cloning Repository for binary construction, this can take a few seconds...")
-        git.Repo.clone_from(PROVENANCE_REPO, provenance_path)
+        git.Repo.clone_from(global_.PROVENANCE_REPO, provenance_path)
     
     repo = git.Repo(provenance_path)
     repo.git.checkout('-f', "main")
@@ -44,7 +35,7 @@ def bootstrap_node(environment, network, config):
         for index in range(len(filtered_tags)):
             print("({}): {}".format(index + 1, filtered_tags[index]))
         try:
-            version_index = int(input("Please enter a release version from above by number:\n"))
+            version_index = int(input("Enter a release version from above by number:\n"))
         except ValueError:
             continue
         if version_index > len(filtered_tags) or version_index < 1:
@@ -59,8 +50,23 @@ def bootstrap_node(environment, network, config):
         repo.git.checkout("-f", version)
 
     # Construct binary for provenance
-    # TODO Hardcoded for now, may need to adjust args to be editable such as with_cleveldb=no
-    os.system("make -C {} install WITH_CLEVELDB=no".format(provenance_path))
+    args = []
+    args_complete = False
+    while not args_complete:
+        try:
+            cleveldb = int(input("Build environment with C Level DB? Usually not required for local testing. (1): Yes (2): No\n"))
+            if cleveldb == 1:
+                args.append("WITH_CLEVELDB=yes")
+                args_complete = True
+            elif cleveldb == 2:
+                args.append("WITH_CLEVELDB=no")
+                args_complete = True
+            else:
+                continue
+        except ValueError:
+            continue
+
+    os.system("make -C {} install {}".format(provenance_path, " ".join(args)))
     go_path = os.path.join(os.path.expanduser('~'), "go", "bin", "provenanced")
 
     if network == "localnet":
@@ -102,14 +108,14 @@ def bootstrap_node(environment, network, config):
                     continue
         if download_genesis == 1 or download_genesis == None:
             print("Downloading genesis file...")
-            genesis_json_res = requests.get(GENESIS_JSON_URL.format(network, environment)).text
+            genesis_json_res = requests.get(global_.GENESIS_JSON_URL.format(network, environment)).text
             open(build_path + "/config/genesis.json", 'w').write(genesis_json_res)
 
         # Take seed information for testnet and mainnet
         if network == "testnet":
-            seed_info = TESTNET_SEEDS
+            seed_info = global_.TESTNET_SEEDS
         else:
-            seed_info = MAINNET_SEEDS
+            seed_info = global_.MAINNET_SEEDS
         print("In order to start the node run\n{}/bin/provenanced start {} --home {}".format(build_path, seed_info, build_path))
 
 # Localnet generate genesis and gentx
@@ -145,8 +151,8 @@ def populate_genesis(build_path, version, config):
         config["localnet"] = {}
     config["localnet"][version] = version_data
 
-    save_config(config)
-    
+    utils.save_config(config)
+
     command = "{}/bin/provenanced --home {} init localnet-{} --chain-id localnet-{};".format(build_path, build_path, version, version)
     command += "{}/bin/provenanced --home {} keys add validator --keyring-backend test;".format(build_path, build_path)
     command += "{}/bin/provenanced --home {} add-genesis-root-name validator pio --keyring-backend test 2>&- || echo pio root name already exists, skipping...;".format(build_path, build_path)
@@ -158,52 +164,3 @@ def populate_genesis(build_path, version, config):
     command += "{}/bin/provenanced --home {} add-genesis-marker 100000000000000000000nhash --manager validator --access mint,burn,admin,withdraw,deposit --activate --keyring-backend test 2>&- || echo existing address, skipping;".format(build_path, build_path)
     command += "{}/bin/provenanced --home {} collect-gentxs".format(build_path, build_path)
     os.system(command)
-
-# Entry point
-def main():
-    if not os.path.exists(CONFIG_PATH + "/config.json"):
-        if not os.path.exists(CONFIG_PATH):
-            os.makedirs(CONFIG_PATH)
-        valid_path = False
-        config = {}
-        while not valid_path:
-            save_path = input("Enter a valid absolute path for the node to be initialized in. If no path is given, '~/' will be used.\n")
-            if '~/' in save_path:
-                save_path = save_path.replace('~/', os.path.expanduser('~'))
-            if not save_path:
-                save_path = os.path.expanduser('~')
-            if os.path.exists(save_path):
-                valid_path = True
-        config["saveDir"] = save_path
-        save_config(config)
-    else:
-        config = load_config()
-    while True:
-        # Set mode for pbpm, else display choices again
-        try:
-            input_mode = int(input("Select Action by Number:\n(1): Bootstrap Node\n(2): Cancel\n"))
-        except ValueError:
-            continue
-
-        if input_mode == 1:
-            # Set network for bootstapping
-            while True:
-                try:
-                    prompt = "Select Network by Number:\n"
-                    for index in range(len(NETWORK_STRINS)):
-                        prompt += "({}): {}\n".format(index + 1, NETWORK_STRINS[index])
-                    prompt += "({}): cancel\n".format(len(NETWORK_STRINS) + 1)
-                    network = int(input(prompt))
-                except ValueError:
-                    continue
-                if network == len(NETWORK_STRINS) + 1:
-                    exit()
-                if network > len(NETWORK_STRINS) or network < 1:
-                    continue
-                bootstrap_node(CHAIN_ID_STRINGS[network - 1], NETWORK_STRINS[network - 1], config)
-                exit()
-        elif input_mode == 2:
-            exit()
-
-if __name__ == "__main__":
-    main()
