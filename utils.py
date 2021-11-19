@@ -1,13 +1,12 @@
 import os
-
 import json
 
-CONFIG_PATH = os.path.join(os.path.expanduser('~'), ".pio", "config.json")
+import global_
 
 def load_config():
-    config_file = open(CONFIG_PATH)
+    config_file = open(global_.CONFIG_PATH + "/config.json")
     return json.load(config_file)
 
 def save_config(config_data):
-    with open(CONFIG_PATH, 'w') as outfile:
+    with open(global_.CONFIG_PATH + "/config.json", 'w') as outfile:
         json.dump(config_data, outfile, indent=4)
