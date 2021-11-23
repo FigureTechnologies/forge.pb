@@ -75,14 +75,14 @@ def build(environment, network, config):
     args_complete = False
     while not args_complete:
         try:
-            cleveldb = input("Build environment with C Level DB? Usually not required for local testing. Default no. (1): Yes (2): No\n")
+            cleveldb = input("Build environment with C Level DB? Usually not required for local testing. [N]\n")
             if not cleveldb:
                 args.append("WITH_CLEVELDB=no")
                 args_complete = True
-            elif int(cleveldb) == 1:
+            elif cleveldb.lower() == 'y':
                 args.append("WITH_CLEVELDB=yes")
                 args_complete = True
-            elif int(cleveldb) == 2:
+            elif cleveldb.lower() == 'n':
                 args.append("WITH_CLEVELDB=no")
                 args_complete = True
             else:
