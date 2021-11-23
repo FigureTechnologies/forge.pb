@@ -1,1 +1,6 @@
 __pycache__
+forge.pb.egg-info
+build
+dist
+venv
+.DS_Store
