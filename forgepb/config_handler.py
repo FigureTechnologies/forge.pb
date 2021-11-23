@@ -1,7 +1,6 @@
 import os
 
-from forgepb import global_
-from forgepb import utils
+from forgepb import global_, utils
 
 def set_build_location():
     if os.path.exists(global_.CONFIG_PATH + "/config.json"):

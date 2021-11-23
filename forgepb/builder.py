@@ -5,8 +5,29 @@ import re
 import git
 import requests
 
-from forgepb import utils
-from forgepb import global_
+from forgepb import utils, global_, config_handler
+
+def select_env():
+    if not os.path.exists(global_.CONFIG_PATH + "/config.json"):
+        config = config_handler.set_build_location()
+    else:
+        config = utils.load_config()
+    # Set network for bootstapping
+    while True:
+        try:
+            prompt = "Select Network by Number:\n"
+            for index in range(len(global_.NETWORK_STRINGS)):
+                prompt += "({}): {}\n".format(index + 1, global_.NETWORK_STRINGS[index])
+            prompt += "({}): cancel\n".format(len(global_.NETWORK_STRINGS) + 1)
+            network = int(input(prompt))
+        except ValueError:
+            continue
+        if network == len(global_.NETWORK_STRINGS) + 1:
+            exit()
+        if network > len(global_.NETWORK_STRINGS) or network < 1:
+            continue
+        build(global_.CHAIN_ID_STRINGS[network - 1], global_.NETWORK_STRINGS[network - 1], config)
+        exit()
 
 # Build a node in the given environment and network
 def build(environment, network, config):
@@ -54,11 +75,14 @@ def build(environment, network, config):
     args_complete = False
     while not args_complete:
         try:
-            cleveldb = int(input("Build environment with C Level DB? Usually not required for local testing. (1): Yes (2): No\n"))
-            if cleveldb == 1:
+            cleveldb = input("Build environment with C Level DB? Usually not required for local testing. Default no. (1): Yes (2): No\n")
+            if not cleveldb:
+                args.append("WITH_CLEVELDB=no")
+                args_complete = True
+            elif int(cleveldb) == 1:
                 args.append("WITH_CLEVELDB=yes")
                 args_complete = True
-            elif cleveldb == 2:
+            elif int(cleveldb) == 2:
                 args.append("WITH_CLEVELDB=no")
                 args_complete = True
             else:
@@ -74,7 +98,7 @@ def build(environment, network, config):
         build_path = root_path + "/" + environment + "/" + str(version)
 
         # Create dirs for node, and move binary
-        if not os.path.exists(build_path + "/config/genesis.json"):
+        if not os.path.exists(build_path + "/bin"):
             os.makedirs(build_path + "/bin")
         copyfile(go_path, "{}/bin/provenanced".format(build_path))
         st = os.stat(build_path + "/bin/provenanced")
@@ -153,14 +177,14 @@ def populate_genesis(build_path, version, config):
 
     utils.save_config(config)
 
-    command = "{}/bin/provenanced --home {} init localnet-{} --chain-id localnet-{};".format(build_path, build_path, version, version)
+    command = "{}/bin/provenanced --home {} init {} --chain-id {};".format(build_path, build_path, localnet_moniker, localnet_chain_id)
     command += "{}/bin/provenanced --home {} keys add validator --keyring-backend test;".format(build_path, build_path)
     command += "{}/bin/provenanced --home {} add-genesis-root-name validator pio --keyring-backend test 2>&- || echo pio root name already exists, skipping...;".format(build_path, build_path)
     command += "{}/bin/provenanced --home {} add-genesis-root-name validator pb --restrict=false --keyring-backend test 2>&- || echo pb root name already exists, skipping...;".format(build_path, build_path)
     command += "{}/bin/provenanced --home {} add-genesis-root-name validator io --restrict --keyring-backend test 2>&- || echo io root name already exists, skipping...;".format(build_path, build_path)
     command += "{}/bin/provenanced --home {} add-genesis-root-name validator provenance --keyring-backend test 2>&- || echo validator root name already exists, skipping...;".format(build_path, build_path)
     command += "{}/bin/provenanced --home {} add-genesis-account validator 100000000000000000000nhash --keyring-backend test 2>&-;".format(build_path, build_path)
-    command += "{}/bin/provenanced --home {} gentx validator 1000000000000000nhash --keyring-backend test --chain-id=localnet-{} 2>&- || echo gentx file already exists, skipping;".format(build_path, build_path, version)
+    command += "{}/bin/provenanced --home {} gentx validator 1000000000000000nhash --keyring-backend test --chain-id={} 2>&- || echo gentx file already exists, skipping;".format(build_path, build_path, localnet_chain_id)
     command += "{}/bin/provenanced --home {} add-genesis-marker 100000000000000000000nhash --manager validator --access mint,burn,admin,withdraw,deposit --activate --keyring-backend test 2>&- || echo existing address, skipping;".format(build_path, build_path)
     command += "{}/bin/provenanced --home {} collect-gentxs".format(build_path, build_path)
     os.system(command)
