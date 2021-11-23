@@ -1,4 +1,4 @@
-# PBPM - Provenance Blockchain Process Manager
+# Forge.pb - Provenance Blockchain Process Manager
 
 ## Description
 The Provenance Blockchain Manager is an application for automated startup of nodes on the [Provenance Blockchain](https://docs.provenance.io/) testnet, mainnet, or localnet which can be used for testing.
@@ -6,7 +6,7 @@ The Provenance Blockchain Manager is an application for automated startup of nod
 ## Usage
 In order to execute, run:
 ```sh
-python main.py
+forge
 ```
 * You will be prompted on what you want PBPM to do. Selecting to bootstrap a node will allow you to select mainnet, testnet, or localnet.
 

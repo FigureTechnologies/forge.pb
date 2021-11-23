@@ -1,7 +1,6 @@
-import os
 import json
 
-import global_
+from forgepb import global_
 
 def load_config():
     config_file = open(global_.CONFIG_PATH + "/config.json")
