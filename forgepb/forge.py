@@ -1,6 +1,6 @@
 import os
 
-from forgepb import builder, config_handler
+from forgepb import utils, config_handler
 
 # Entry point
 def main():
@@ -12,7 +12,7 @@ def main():
             continue
 
         if input_mode == 1:
-            builder.select_env()
+            utils.select_env()
         elif input_mode == 2:
             config_handler.set_build_location()
         elif input_mode == 3:
