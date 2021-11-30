@@ -130,3 +130,41 @@ def collect_args(args):
         except ValueError:
             continue
     return args
+
+# Save the information for generated mnemonic and validator information. Convert from log output
+def persist_localnet_information(path, config, version):
+    with open(path + "/temp_log.txt", "r+") as file:
+        information = file.read()
+        # Remove unused line that can happen when validator already exists
+        if information[0] == 'o':
+            information = information.replace('override the existing name validator [y/N]: \n', '')
+        
+        # Split into mnemonic and validator information list
+        information = information.split('**Important** write this mnemonic phrase in a safe place.\nIt is the only way to recover your account if you ever forget your password.')
+        
+        # Construct json object from validator information
+        validator_text_raw = information[0].replace("'{", "{").replace("}'", "}").replace('  ', '').split('-')
+        validator_text_raw = list(filter(None, validator_text_raw))
+        validator_persist = []
+        for validator_obj_raw in validator_text_raw:
+            validator_obj_raw = validator_obj_raw.strip()
+            validator_obj = {}
+            for attribute in validator_obj_raw.split('\n'):
+                key_value = attribute.split(': ')
+                if key_value[1].startswith('{'):
+                    validator_obj[key_value[0]] = json.loads(key_value[1])
+                elif key_value[1] == '""':
+                    validator_obj[key_value[0]] = ''
+                else:
+                    validator_obj[key_value[0]] = key_value[1]
+            validator_persist.append(validator_obj)
+        mnemonic_info = information[1].split()
+        
+        # Save config
+        config['localnet'][version]['mnemonic'] = mnemonic_info
+        config['localnet'][version]['validator-information'] = validator_persist
+        save_config(config)
+        
+        # Close and remove log file
+        file.close()
+        os.remove(path + "/temp_log.txt")

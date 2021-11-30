@@ -31,7 +31,6 @@ def build(environment, network, config, version=None, args=[], moniker=None, cha
         st = os.stat(build_path + "/bin/provenanced")
         os.chmod(build_path + "/bin/provenanced", st.st_mode | stat.S_IEXEC)
         
-        # populate_genesis(build_path, version, config)
         if not moniker or not chain_id:
             version_data = utils.collect_moniker_chain_id(version, config)
         else:
@@ -44,7 +43,7 @@ def build(environment, network, config, version=None, args=[], moniker=None, cha
         utils.save_config(config)
 
         populate_genesis(build_path, moniker, chain_id)
-
+        utils.persist_localnet_information(build_path, config, version)
         print("{}/bin/provenanced start --home {}".format(build_path, build_path))
 
     else:
@@ -84,7 +83,7 @@ def build(environment, network, config, version=None, args=[], moniker=None, cha
 # Localnet generate genesis and gentx
 def populate_genesis(build_path, moniker, chain_id):
     command = "{}/bin/provenanced --home {} init {} --chain-id {};".format(build_path, build_path, moniker, chain_id)
-    command += "{}/bin/provenanced --home {} keys add validator --keyring-backend test;".format(build_path, build_path)
+    command += "{}/bin/provenanced --home {} keys add validator --keyring-backend test 2>&1 | tee {}/temp_log.txt;".format(build_path, build_path, build_path)
     command += "{}/bin/provenanced --home {} add-genesis-root-name validator pio --keyring-backend test 2>&- || echo pio root name already exists, skipping...;".format(build_path, build_path)
     command += "{}/bin/provenanced --home {} add-genesis-root-name validator pb --restrict=false --keyring-backend test 2>&- || echo pb root name already exists, skipping...;".format(build_path, build_path)
     command += "{}/bin/provenanced --home {} add-genesis-root-name validator io --restrict --keyring-backend test 2>&- || echo io root name already exists, skipping...;".format(build_path, build_path)

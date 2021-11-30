@@ -12,3 +12,4 @@ GENESIS_VERSION_TXT_URL = "https://raw.githubusercontent.com/provenance-io/{}/ma
 GENESIS_JSON_URL = "https://raw.githubusercontent.com/provenance-io/{}/main/{}/genesis.json"
 PROVENANCE_REPO = "https://github.com/provenance-io/provenance.git"
 CONFIG_PATH = os.path.join(os.path.expanduser('~'), ".pio")
+COMMAND_REQUIRE_MAP = {'boot_args': 'network'}
