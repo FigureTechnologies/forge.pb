@@ -21,9 +21,10 @@ def get_version_info(network, environment, provenance_path):
     else:
         version = release_tag.text.strip('\n')
 
-    filtered_tags = get_versions(provenance_path)
-    for index, version_tag in zip(range(5), filtered_tags[::-1]):
-        print(version_tag)
+    if network == 'localnet':
+        filtered_tags = get_versions(provenance_path)
+        for index, version_tag in zip(range(5), filtered_tags[::-1]):
+            print(version_tag)
     repo = git.Repo(provenance_path)
 
     # In case of localnet, list release versions for user to select
@@ -119,10 +120,10 @@ def collect_args(args):
             if not cleveldb:
                 args.append("WITH_CLEVELDB=no")
                 args_complete = True
-            elif cleveldb.lower() == 'y':
+            elif cleveldb.lower() in ['y', 'yes']:
                 args.append("WITH_CLEVELDB=yes")
                 args_complete = True
-            elif cleveldb.lower() == 'n':
+            elif cleveldb.lower() in ['n', 'no']:
                 args.append("WITH_CLEVELDB=no")
                 args_complete = True
             else:
@@ -138,7 +139,9 @@ def persist_localnet_information(path, config, version):
         # Remove unused line that can happen when validator already exists
         if information[0] == 'o':
             information = information.replace('override the existing name validator [y/N]: \n', '')
-        
+        elif information.startswith('\n'):
+            information = information[2:]
+        print(information)
         # Split into mnemonic and validator information list
         information = information.split('**Important** write this mnemonic phrase in a safe place.\nIt is the only way to recover your account if you ever forget your password.')
         

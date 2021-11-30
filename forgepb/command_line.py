@@ -35,7 +35,7 @@ def start(edit_config, network, save_loc, list_release_versions, list_config, re
             config = config_handler.set_build_location()
         else:
             config = utils.load_config()
-        provenance_path = config['saveDir'] + "/forge" + "/provenance"
+        provenance_path = config['saveDir'] + "forge" + "/provenance"
         try:
             if release_version:
                 if release_version not in utils.get_versions(provenance_path):
@@ -52,7 +52,7 @@ def start(edit_config, network, save_loc, list_release_versions, list_config, re
             config = config_handler.set_build_location()
         else:
             config = utils.load_config()
-        provenance_path = config['saveDir'] + "/forge" + "/provenance"
+        provenance_path = config['saveDir'] + "forge" + "/provenance"
 
         release_versions = utils.get_versions(provenance_path)
         [print(version) for version in release_versions[::-1]]
@@ -77,8 +77,8 @@ def start(edit_config, network, save_loc, list_release_versions, list_config, re
                 config = config_handler.set_build_location()
             else:
                 config = utils.load_config()
-            provenance_path = config['saveDir'] + "/forge" + "/provenance"
-            if release_version not in utils.get_versions(provenance_path):
+            provenance_path = config['saveDir'] + "forge" + "/provenance"
+            if release_version and release_version not in utils.get_versions(provenance_path):
                 print("The version entered doesn't exist in provenance. Please run 'forge -lsv' to list all versions")
             else:
                 builder.build(global_.CHAIN_ID_STRINGS[network], network, config, release_version, list(boot_args), moniker, chain_id)

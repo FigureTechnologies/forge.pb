@@ -19,13 +19,16 @@ def check_save_location(save_path):
     else:
         if not os.path.exists(global_.CONFIG_PATH):
             os.makedirs(global_.CONFIG_PATH)
+        config = {}
     path_str = save_path
     if '~/' in path_str:
-        path_str = path_str.replace('~/', os.path.expanduser('~'))
+        path_str = path_str.replace('~/', os.path.expanduser('~') + '/')
     if not path_str:
         path_str = os.path.expanduser('~')
     if os.path.exists(path_str):
-        config = {'saveDir': save_path}
+        if not path_str.endswith('/'):
+            path_str = path_str + '/'
+        config['saveDir'] = path_str
         utils.save_config(config)
         return {'success': True, 'config': config}
     else:

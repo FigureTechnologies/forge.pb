@@ -9,11 +9,16 @@ from forgepb import utils, global_
 
 # Build a node in the given environment and network
 def build(environment, network, config, version=None, args=[], moniker=None, chain_id=None):
-    root_path = config['saveDir'] + "/forge"
-    provenance_path = config['saveDir'] + "/forge" + "/provenance"
-    if not version and network == 'localnet':
+    root_path = config['saveDir'] + "forge"
+    provenance_path = config['saveDir'] + "forge" + "/provenance"
+    if not version:
         version = utils.get_version_info(network, environment, provenance_path)
-
+    else:
+        repo = git.Repo(provenance_path)
+        try:
+            repo.git.checkout("-f", "tags/{}".format(version), "-b", version)
+        except git.exc.GitCommandError:
+            repo.git.checkout("-f", version)
     # Construct binary for provenance
     args = utils.collect_args(args)
 
@@ -31,12 +36,15 @@ def build(environment, network, config, version=None, args=[], moniker=None, cha
         st = os.stat(build_path + "/bin/provenanced")
         os.chmod(build_path + "/bin/provenanced", st.st_mode | stat.S_IEXEC)
         
+        # Collect moniker and chain id if they aren't given
         if not moniker or not chain_id:
             version_data = utils.collect_moniker_chain_id(version, config)
         else:
             version_data = {}
             version_data["moniker"] = moniker
             version_data["chainId"] = chain_id
+
+        # Persist data to the config file
         if "localnet" not in config:
             config["localnet"] = {}
         config["localnet"][version] = version_data
