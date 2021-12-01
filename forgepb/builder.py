@@ -11,6 +11,7 @@ from forgepb import utils, global_
 def build(environment, network, config, version=None, args=[], moniker=None, chain_id=None):
     root_path = config['saveDir'] + "forge"
     provenance_path = config['saveDir'] + "forge" + "/provenance"
+    # Get version and checkout to proper provenance tag
     if not version:
         version = utils.get_version_info(network, environment, provenance_path)
     else:
@@ -25,8 +26,8 @@ def build(environment, network, config, version=None, args=[], moniker=None, cha
     os.system("make -C {} install {}".format(provenance_path, " ".join(args)))
     go_path = os.path.join(os.path.expanduser('~'), "go", "bin", "provenanced")
 
+    # Handle Localnet node construction
     if network == "localnet":
-        # Handle Localnet
         build_path = root_path + "/" + environment + "/" + str(version)
 
         # Create dirs for node, and move binary
@@ -54,6 +55,7 @@ def build(environment, network, config, version=None, args=[], moniker=None, cha
         utils.persist_localnet_information(build_path, config, version)
         print("{}/bin/provenanced start --home {}".format(build_path, build_path))
 
+    # Handle mainnet and testnet node construction
     else:
         build_path = root_path + "/" + environment
 

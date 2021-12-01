@@ -2,6 +2,7 @@ import os
 
 from forgepb import global_, utils
 
+# Take user input for save location
 def set_build_location():
     valid_path = False
     while not valid_path:
@@ -13,6 +14,7 @@ def set_build_location():
         if valid_path:
             return result['config']
 
+# Check that the save location given is valid display message if failed
 def check_save_location(save_path):
     if os.path.exists(global_.CONFIG_PATH + "/config.json"):
         config = utils.load_config()

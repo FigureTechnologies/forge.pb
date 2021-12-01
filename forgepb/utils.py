@@ -6,14 +6,17 @@ import re
 
 from forgepb import builder, config_handler, global_, utils
 
+# Pull existing config from file 
 def load_config():
     config_file = open(global_.CONFIG_PATH + "/config.json")
     return json.load(config_file)
 
+# Save config to file
 def save_config(config_data):
     with open(global_.CONFIG_PATH + "/config.json", 'w') as outfile:
         json.dump(config_data, outfile, indent=4)
 
+# Get version information and checkout to proper provenance tag
 def get_version_info(network, environment, provenance_path):
     release_tag = requests.get(global_.GENESIS_VERSION_TXT_URL.format(network, environment))
     if release_tag.status_code != 200:
@@ -46,6 +49,7 @@ def get_version_info(network, environment, provenance_path):
         repo.git.checkout("-f", version)
     return version
 
+# Returns a list of version tags for localnet to use
 def get_versions(provenance_path):
     # Get git repo if it doesn't already exist
     if not os.path.exists(provenance_path):
@@ -59,7 +63,8 @@ def get_versions(provenance_path):
     regex = re.compile(r'v[0-9]+\.[0-9]+\.[0-9]+$')
     return [str(i) for i in repo.tags if regex.match(str(i))]
 
-def select_env():
+# take user input for selecting network
+def select_network():
     if not os.path.exists(global_.CONFIG_PATH + "/config.json"):
         config = config_handler.set_build_location()
     else:
@@ -82,6 +87,7 @@ def select_env():
         builder.build(global_.CHAIN_ID_STRINGS[global_.NETWORK_STRINGS[network - 1]], global_.NETWORK_STRINGS[network - 1], config)
         exit()
 
+# Collect moniker and chain id for a localnet node
 def collect_moniker_chain_id(version, config):
     localnet_moniker = ""
     localnet_chain_id = ""
@@ -112,6 +118,7 @@ def collect_moniker_chain_id(version, config):
     version_data["chainId"] = localnet_chain_id
     return version_data
 
+# Collect args for constructing provenance binary
 def collect_args(args):
     args_complete = args != []
     while not args_complete:

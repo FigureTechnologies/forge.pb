@@ -5,6 +5,7 @@ import json
 
 from forgepb import forge, global_, builder, utils, config_handler
 
+# Require network flag when -ba is given
 def command_required_option_from_option(require_name):
 
     class CommandOptionRequiredClass(click.Command):
@@ -18,7 +19,7 @@ def command_required_option_from_option(require_name):
             super(CommandOptionRequiredClass, self).invoke(ctx)
 
     return CommandOptionRequiredClass
-    
+
 @click.command(cls=command_required_option_from_option('boot_args'))
 @click.option('-ec', '--edit-config', 'edit_config', is_flag=True, help='Guided set save location for environments')
 @click.option('-n', '--network', 'network', type=click.Choice(global_.NETWORK_STRINGS), default=None, help='Choose which network node to initialize')
@@ -30,12 +31,15 @@ def command_required_option_from_option(require_name):
 @click.option('-cid', '--chain-id', 'chain_id', type=click.STRING, help='A chain id to be used for spinning up a localnet node. Not required for testnet or mainnet')
 @click.option('-lc', '--list-config', 'list_config', is_flag=True, help='Display the saved config for a given network, including mnemonic and validator information')
 def start(edit_config, network, save_loc, list_release_versions, list_config, release_version = None, boot_args = [], moniker = None, chain_id = None):
+    # List the config information about a localnet node. Including mnemonic and validator info
     if list_config:
+        # get config or set location of config to be made
         if not os.path.exists(global_.CONFIG_PATH + "/config.json"):
             config = config_handler.set_build_location()
         else:
             config = utils.load_config()
         provenance_path = config['saveDir'] + "forge" + "/provenance"
+        # Retrieve the config information if it exists, else display a message saying that it couldn't be found
         try:
             if release_version:
                 if release_version not in utils.get_versions(provenance_path):
@@ -47,6 +51,7 @@ def start(edit_config, network, save_loc, list_release_versions, list_config, re
         except KeyError:
             print("There is no node created with that version.")
         exit()
+    # List all relase versions that could be used to spin up a node
     if list_release_versions:
         if not os.path.exists(global_.CONFIG_PATH + "/config.json"):
             config = config_handler.set_build_location()
@@ -58,18 +63,21 @@ def start(edit_config, network, save_loc, list_release_versions, list_config, re
         [print(version) for version in release_versions[::-1]]
         exit()
 
+    # Handle all other args
     if edit_config or network or save_loc or release_version:
+        # Set save_location of forge
         if save_loc and not edit_config:
-            config_handler.check_save_location(save_loc)['success']
+            config_handler.check_save_location(save_loc)
             exit()
+        # Display error as these can't be present at the same time
         elif save_loc and edit_config:
             click.echo("save_loc and config flag cannot be sent at the same time")
             exit()
-        
+        # go to set location wizard
         elif edit_config and not save_loc:
             config = config_handler.set_build_location()
             exit()
-        
+        # Use send args to create node
         elif network != None or release_version != None:
             if network == None:
                 network = 'localnet'
@@ -82,11 +90,10 @@ def start(edit_config, network, save_loc, list_release_versions, list_config, re
                 print("The version entered doesn't exist in provenance. Please run 'forge -lsv' to list all versions")
             else:
                 builder.build(global_.CHAIN_ID_STRINGS[network], network, config, release_version, list(boot_args), moniker, chain_id)
-        elif network == None:
-            utils.select_env()
         else:
-            utils.select_env()
+            utils.select_network()
     else:
+        # Start wizard at the beginning
         forge.main()
 
 if __name__ == '__main__':
