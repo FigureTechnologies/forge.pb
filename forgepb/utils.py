@@ -3,6 +3,7 @@ import json
 import git
 import requests
 import re
+import psutil
 
 from forgepb import builder, config_handler, global_, utils
 
@@ -143,38 +144,128 @@ def collect_args(args):
 def persist_localnet_information(path, config, version):
     with open(path + "/temp_log.txt", "r+") as file:
         information = file.read()
-        # Remove unused line that can happen when validator already exists
-        if information[0] == 'o':
-            information = information.replace('override the existing name validator [y/N]: \n', '')
-        elif information.startswith('\n'):
-            information = information[2:]
-        print(information)
-        # Split into mnemonic and validator information list
-        information = information.split('**Important** write this mnemonic phrase in a safe place.\nIt is the only way to recover your account if you ever forget your password.')
-        
-        # Construct json object from validator information
-        validator_text_raw = information[0].replace("'{", "{").replace("}'", "}").replace('  ', '').split('-')
-        validator_text_raw = list(filter(None, validator_text_raw))
-        validator_persist = []
-        for validator_obj_raw in validator_text_raw:
-            validator_obj_raw = validator_obj_raw.strip()
-            validator_obj = {}
-            for attribute in validator_obj_raw.split('\n'):
-                key_value = attribute.split(': ')
-                if key_value[1].startswith('{'):
-                    validator_obj[key_value[0]] = json.loads(key_value[1])
-                elif key_value[1] == '""':
-                    validator_obj[key_value[0]] = ''
-                else:
-                    validator_obj[key_value[0]] = key_value[1]
-            validator_persist.append(validator_obj)
-        mnemonic_info = information[1].split()
-        
-        # Save config
-        config['localnet'][version]['mnemonic'] = mnemonic_info
-        config['localnet'][version]['validator-information'] = validator_persist
-        save_config(config)
-        
+        if not information.startswith('override the existing name validator [y/N]: Error: aborted'):
+            # Remove unused line that can happen when validator already exists
+            if information[0] == 'o':
+                information = information.replace('override the existing name validator [y/N]: \n', '')
+            elif information.startswith('\n'):
+                information = information[2:]
+            print(information)
+            # Split into mnemonic and validator information list
+            information = information.split('**Important** write this mnemonic phrase in a safe place.\nIt is the only way to recover your account if you ever forget your password.')
+            
+            # Construct json object from validator information
+            validator_text_raw = information[0].replace("'{", "{").replace("}'", "}").replace('  ', '').split('-')
+            validator_text_raw = list(filter(None, validator_text_raw))
+            validator_persist = []
+            for validator_obj_raw in validator_text_raw:
+                validator_obj_raw = validator_obj_raw.strip()
+                validator_obj = {}
+                for attribute in validator_obj_raw.split('\n'):
+                    key_value = attribute.split(': ')
+                    if key_value[1].startswith('{'):
+                        validator_obj[key_value[0]] = json.loads(key_value[1])
+                    elif key_value[1] == '""':
+                        validator_obj[key_value[0]] = ''
+                    else:
+                        validator_obj[key_value[0]] = key_value[1]
+                validator_persist.append(validator_obj)
+            mnemonic_info = information[1].split()
+            
+            # Save config
+            config['localnet'][version]['mnemonic'] = mnemonic_info
+            config['localnet'][version]['validator-information'] = validator_persist
+            save_config(config)
+            
         # Close and remove log file
         file.close()
         os.remove(path + "/temp_log.txt")
+
+def view_running_node_info():
+    if os.path.exists(global_.CONFIG_PATH + "/config.json"):
+        config = utils.load_config()
+        if config['running-node']:
+            try:
+                node_information = config['running-node-info']
+                process = psutil.Process(node_information['pid'])
+                if process.name() != 'provenanced':
+                    config['running-node'] = False
+                    config['running-node-info'] = {}
+                    save_config(config)
+                    return {
+                        "node-running": False,
+                        "messagge": "A node was running but stopped unexpectedly:\nNetwork: {}    Provenance Version: {}    PID: {}    Status: Not Running\nThis information will be deleted so a new node can be started. Logs can be found in the forge save directory for the individual nodes.".format(node_information['network'], node_information['version'], node_information['pid'])
+                    }
+                else:
+                    return {
+                        "node-running": True,
+                        "process": process,
+                        "message": "A node is currently running:\nNetwork: {}    Provenance Version: {}    PID: {}    Status: {}".format(node_information['network'], node_information['version'], node_information['pid'], process.status())
+                    }
+            except Exception as e:
+                config['running-node'] = False
+                config['running-node-info'] = {}
+                save_config(config)
+                return {
+                    "node-running": False,
+                    "message": "A node was running but stopped unexpectedly:\nNetwork: {}    Provenance Version: {}    PID: {}    Status: Not Running\nThis information will be deleted so a new node can be started. Logs can be found in the forge save directory for the individual nodes.".format(node_information['network'], node_information['version'], node_information['pid'])
+                }
+    return {
+        "node-running": False,
+        "message": "There is not a node currently Running"
+    }
+
+def stop_active_node(process_information):
+    if process_information['node-running']:
+        process_information['process'].terminate()
+        config = utils.load_config()
+        config['running-node'] = False
+        config['running-node-info'] = {}
+    else:
+        print("There is not a node running currently.")
+
+def start_node():
+    try:
+        config = utils.load_config()
+        provenance_path = config['saveDir'] + "forge" + "/provenance"
+        # Display available nodes
+        print('Nodes available to be started:')
+        if 'localnet' in config:
+            print('Network = localnet:\nVersions: {}'.format(list(config['localnet'].keys())))
+        if 'mainnet' in config:
+            print('Network = mainnet')
+        if 'testnet' in config:
+            print('Network = testnet')
+
+        network = None
+        while not network:
+            network_input = input("Select network from above: ")
+            if network_input in global_.NETWORK_STRINGS:
+                network = network_input
+        
+        version = None
+        if not network == 'localnet':
+            version = config[network]['version']
+            node_info = config[network]
+        else:
+            while not version:
+                version_input = input("Select version from above: ")
+                if version_input in config['localnet'].keys():
+                    version = version_input
+            node_info = config[network][version]
+        builder.spawnDaemon(node_info['run-command'], version, network, config, node_info['log-path'])
+    except Exception:
+        print("You haven't initialized a node. Try running 'forge' to start the wizard.")
+
+def handle_running_node(process_information):
+    node_stopped = False
+    while not node_stopped:
+        start_node = input("A node is currently running. Stop node? [y]/n: ")
+        if not start_node:
+            start_node = 'y'
+        if start_node.lower() == 'y':
+            stop_active_node(process_information)
+            node_stopped = True
+        elif start_node.lower() == 'n':
+            print('Exiting...')
+            exit()

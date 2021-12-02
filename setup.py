@@ -7,8 +7,8 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="forge.pb",
-    version="1.0.0",
-    url='https://github.com/wbaker-figure/pbpm',
+    version="1.1.1",
+    url='https://github.com/provenance-io/forge.pb',
     author='Wyatt Baker',
     author_email='wbaker@figure.com',
     packages=['forgepb'],

@@ -31,6 +31,7 @@ def check_save_location(save_path):
         if not path_str.endswith('/'):
             path_str = path_str + '/'
         config['saveDir'] = path_str
+        config['running-node'] = False
         utils.save_config(config)
         return {'success': True, 'config': config}
     else:
