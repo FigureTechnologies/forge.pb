@@ -4,7 +4,7 @@
 The Provenance Blockchain Manager is an application for automated startup of nodes on the [Provenance Blockchain](https://docs.provenance.io/) testnet, mainnet, or localnet which can be used for testing.
 
 ## Usage
-In order to execute, run:
+In order to execute wizard, run:
 ```sh
 forge
 ```

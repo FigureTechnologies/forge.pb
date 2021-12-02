@@ -55,12 +55,12 @@ def build(environment, network, config, version=None, args=[], moniker=None, cha
         if version not in config["localnet"]:
             config["localnet"][version] = version_data
         else:
-            config["localnet"][version]["moniker"] = moniker
-            config["localnet"][version]["chainId"] = chain_id
+            config["localnet"][version]["moniker"] = version_data["moniker"]
+            config["localnet"][version]["chainId"] = version_data["chainId"]
         utils.save_config(config)
 
-        populate_genesis(build_path, moniker, chain_id)
-        utils.persist_localnet_information(build_path, config, version)
+        validator_info = populate_genesis(build_path, moniker, chain_id)
+        utils.persist_localnet_information(build_path, config, version, validator_info)
         
         run_command = "{}/bin/provenanced start --home {}".format(build_path, build_path)
         log_path = '{}/logs/{}.txt'.format(build_path, datetime.datetime.now())
@@ -103,15 +103,17 @@ def build(environment, network, config, version=None, args=[], moniker=None, cha
         # Download genesis file which is used to bring up the node with certain information
         download_genesis = None
         if os.path.exists(build_path + "/config/genesis.json"):
-            while download_genesis == None or download_genesis not in [1, 2]:
+            genesis_complete = False
+            while not genesis_complete:
                 try:
                     download_genesis = input("The genesis file already exists, would you like to overwrite the existing file?[y]/n:\n")
+                    if download_genesis == None or download_genesis.lower() == 'y':
+                        print("Downloading genesis file...")
+                        genesis_json_res = requests.get(global_.GENESIS_JSON_URL.format(network, environment)).text
+                        open(build_path + "/config/genesis.json", 'w').write(genesis_json_res)
                 except ValueError:
                     continue
-        if download_genesis == None or download_genesis.lower() == 'y':
-            print("Downloading genesis file...")
-            genesis_json_res = requests.get(global_.GENESIS_JSON_URL.format(network, environment)).text
-            open(build_path + "/config/genesis.json", 'w').write(genesis_json_res)
+        
 
         # Take seed information for testnet and mainnet
         if network == "testnet":
@@ -144,17 +146,29 @@ def build(environment, network, config, version=None, args=[], moniker=None, cha
 
 # Localnet generate genesis and gentx
 def populate_genesis(build_path, moniker, chain_id):
-    command = "{}/bin/provenanced --home {} init {} --chain-id {};".format(build_path, build_path, moniker, chain_id)
-    command += "{}/bin/provenanced --home {} keys add validator --keyring-backend test 2>&1 | tee {}/temp_log.txt;".format(build_path, build_path, build_path)
-    command += "{}/bin/provenanced --home {} add-genesis-root-name validator pio --keyring-backend test 2>&- || echo pio root name already exists, skipping...;".format(build_path, build_path)
-    command += "{}/bin/provenanced --home {} add-genesis-root-name validator pb --restrict=false --keyring-backend test 2>&- || echo pb root name already exists, skipping...;".format(build_path, build_path)
-    command += "{}/bin/provenanced --home {} add-genesis-root-name validator io --restrict --keyring-backend test 2>&- || echo io root name already exists, skipping...;".format(build_path, build_path)
-    command += "{}/bin/provenanced --home {} add-genesis-root-name validator provenance --keyring-backend test 2>&- || echo validator root name already exists, skipping...;".format(build_path, build_path)
-    command += "{}/bin/provenanced --home {} add-genesis-account validator 100000000000000000000nhash --keyring-backend test 2>&-;".format(build_path, build_path)
-    command += "{}/bin/provenanced --home {} gentx validator 1000000000000000nhash --keyring-backend test --chain-id={} 2>&- || echo gentx file already exists, skipping;".format(build_path, build_path, chain_id)
-    command += "{}/bin/provenanced --home {} add-genesis-marker 100000000000000000000nhash --manager validator --access mint,burn,admin,withdraw,deposit --activate --keyring-backend test 2>&- || echo existing address, skipping;".format(build_path, build_path)
-    command += "{}/bin/provenanced --home {} collect-gentxs".format(build_path, build_path)
-    os.system(command)
+    command1 = "{}/bin/provenanced --home {} init {} --chain-id {};".format(build_path, build_path, moniker, chain_id)
+    command2 = "{}/bin/provenanced --home {} keys add validator --keyring-backend test 2>&1;".format(build_path, build_path, build_path)
+    command3 = "{}/bin/provenanced --home {} add-genesis-root-name validator pio --keyring-backend test 2>&- || echo pio root name already exists, skipping...;".format(build_path, build_path)
+    command3 += "{}/bin/provenanced --home {} add-genesis-root-name validator pb --restrict=false --keyring-backend test 2>&- || echo pb root name already exists, skipping...;".format(build_path, build_path)
+    command3 += "{}/bin/provenanced --home {} add-genesis-root-name validator io --restrict --keyring-backend test 2>&- || echo io root name already exists, skipping...;".format(build_path, build_path)
+    command3 += "{}/bin/provenanced --home {} add-genesis-root-name validator provenance --keyring-backend test 2>&- || echo validator root name already exists, skipping...;".format(build_path, build_path)
+    command3 += "{}/bin/provenanced --home {} add-genesis-account validator 100000000000000000000nhash --keyring-backend test 2>&-;".format(build_path, build_path)
+    command3 += "{}/bin/provenanced --home {} gentx validator 1000000000000000nhash --keyring-backend test --chain-id={} 2>&- || echo gentx file already exists, skipping;".format(build_path, build_path, chain_id)
+    command3 += "{}/bin/provenanced --home {} add-genesis-marker 100000000000000000000nhash --manager validator --access mint,burn,admin,withdraw,deposit --activate --keyring-backend test 2>&- || echo existing address, skipping;".format(build_path, build_path)
+    command3 += "{}/bin/provenanced --home {} collect-gentxs".format(build_path, build_path)
+    validator_check_command = "{}/bin/provenanced --home {} keys show validator".format(build_path, build_path)
+    os.system(command1)
+    validator_check_process = subprocess.Popen(validator_check_command, shell=True, stdout=subprocess.PIPE)
+    validator_check_process.wait()
+    validators_out, err = validator_check_process.communicate()
+    if validators_out.decode('utf-8').startswith('- name:'):
+        print("override the existing name validator [y/N]:")
+    process = subprocess.Popen(command2, shell=True, stdout=subprocess.PIPE)
+    process.wait()
+
+    out, err = process.communicate()
+    os.system(command3)
+    return out.decode('utf-8')
 
 def spawnDaemon(node_command, version, network, config, log_path):
     try: 

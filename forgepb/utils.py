@@ -99,7 +99,7 @@ def collect_moniker_chain_id(version, config):
         default_moniker = "localnet-{}".format(version)
         default_chain_id = "localnet-{}".format(version)
     while localnet_moniker == "":
-        localnet_moniker = input("Enter a moniker for your localnet({}):\n".format(default_moniker))
+        localnet_moniker = input("Enter a moniker for your localnet[{}]:\n".format(default_moniker))
         if not localnet_moniker:
             localnet_moniker = default_moniker
         else:
@@ -107,7 +107,7 @@ def collect_moniker_chain_id(version, config):
                 if not (letter.isalnum() or letter in "-_."):
                     localnet_moniker = ""
     while localnet_chain_id == "":
-        localnet_chain_id = input("Enter a chain-id for your localnet({}):\n".format(default_chain_id))
+        localnet_chain_id = input("Enter a chain-id for your localnet[{}]:\n".format(default_chain_id))
         if not localnet_chain_id:
             localnet_chain_id = default_chain_id
         else:
@@ -141,45 +141,39 @@ def collect_args(args):
     return args
 
 # Save the information for generated mnemonic and validator information. Convert from log output
-def persist_localnet_information(path, config, version):
-    with open(path + "/temp_log.txt", "r+") as file:
-        information = file.read()
-        if not information.startswith('override the existing name validator [y/N]: Error: aborted'):
-            # Remove unused line that can happen when validator already exists
-            if information[0] == 'o':
-                information = information.replace('override the existing name validator [y/N]: \n', '')
-            elif information.startswith('\n'):
-                information = information[2:]
-            print(information)
-            # Split into mnemonic and validator information list
-            information = information.split('**Important** write this mnemonic phrase in a safe place.\nIt is the only way to recover your account if you ever forget your password.')
-            
-            # Construct json object from validator information
-            validator_text_raw = information[0].replace("'{", "{").replace("}'", "}").replace('  ', '').split('-')
-            validator_text_raw = list(filter(None, validator_text_raw))
-            validator_persist = []
-            for validator_obj_raw in validator_text_raw:
-                validator_obj_raw = validator_obj_raw.strip()
-                validator_obj = {}
-                for attribute in validator_obj_raw.split('\n'):
-                    key_value = attribute.split(': ')
-                    if key_value[1].startswith('{'):
-                        validator_obj[key_value[0]] = json.loads(key_value[1])
-                    elif key_value[1] == '""':
-                        validator_obj[key_value[0]] = ''
-                    else:
-                        validator_obj[key_value[0]] = key_value[1]
-                validator_persist.append(validator_obj)
-            mnemonic_info = information[1].split()
-            
-            # Save config
-            config['localnet'][version]['mnemonic'] = mnemonic_info
-            config['localnet'][version]['validator-information'] = validator_persist
-            save_config(config)
-            
-        # Close and remove log file
-        file.close()
-        os.remove(path + "/temp_log.txt")
+def persist_localnet_information(path, config, version, information):
+    if not information.startswith('override the existing name validator [y/N]: Error: aborted'):
+        # Remove unused line that can happen when validator already exists
+        if information[0] == 'o':
+            information = information.replace('override the existing name validator [y/N]: \n', '')
+        elif information.startswith('\n'):
+            information = information[2:]
+        print(information)
+        # Split into mnemonic and validator information list
+        information = information.split('**Important** write this mnemonic phrase in a safe place.\nIt is the only way to recover your account if you ever forget your password.')
+        
+        # Construct json object from validator information
+        validator_text_raw = information[0].replace("'{", "{").replace("}'", "}").replace('  ', '').split('-')
+        validator_text_raw = list(filter(None, validator_text_raw))
+        validator_persist = []
+        for validator_obj_raw in validator_text_raw:
+            validator_obj_raw = validator_obj_raw.strip()
+            validator_obj = {}
+            for attribute in validator_obj_raw.split('\n'):
+                key_value = attribute.split(': ')
+                if key_value[1].startswith('{'):
+                    validator_obj[key_value[0]] = json.loads(key_value[1])
+                elif key_value[1] == '""':
+                    validator_obj[key_value[0]] = ''
+                else:
+                    validator_obj[key_value[0]] = key_value[1]
+            validator_persist.append(validator_obj)
+        mnemonic_info = information[1].split()
+        
+        # Save config
+        config['localnet'][version]['mnemonic'] = mnemonic_info
+        config['localnet'][version]['validator-information'] = validator_persist
+        save_config(config)
 
 def view_running_node_info():
     if os.path.exists(global_.CONFIG_PATH + "/config.json"):

@@ -32,7 +32,7 @@ def command_required_option_from_option(require_name):
 @click.option('-lc', '--list-config', 'list_config', is_flag=True, help='Display the saved config for a given network, including mnemonic and validator information')
 @click.option('-ns', '--node-status', 'status', is_flag=True, help='Display running node status')
 @click.option('-sn', '--start-node', 'start_node', is_flag=True, help='Starts node with given network and release version')
-@click.option('-tn', '--terminate-node', 'terminate_node', is_flag=True, help='Terminates a running node')
+@click.option('-tn', '--terminate-node', 'terminate_node', is_flag=True, help='Terminates the running node')
 def start(edit_config, network, save_loc, list_release_versions, list_config, status, start_node, terminate_node, release_version = None, boot_args = [], moniker = None, chain_id = None):
     # Stop the currently running node
     if terminate_node:
