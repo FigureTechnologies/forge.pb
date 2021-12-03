@@ -206,7 +206,7 @@ def view_running_node_info():
                 }
     return {
         "node-running": False,
-        "message": "There is not a node currently Running"
+        "message": ""
     }
 
 def stop_active_node(process_information):
@@ -221,7 +221,6 @@ def stop_active_node(process_information):
 def start_node():
     try:
         config = utils.load_config()
-        provenance_path = config['saveDir'] + "forge" + "/provenance"
         # Display available nodes
         print('Nodes available to be started:')
         if 'localnet' in config:
@@ -263,3 +262,8 @@ def handle_running_node(process_information):
         elif start_node.lower() == 'n':
             print('Exiting...')
             exit()
+
+def get_remote_branches(repo=None, provenance_path=None):
+    if repo == None:
+        repo = git.Repo(provenance_path)
+    return [branch.name for branch in repo.remote().refs]

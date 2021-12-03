@@ -10,18 +10,36 @@ import datetime
 from forgepb import utils, global_
 
 # Build a node in the given environment and network
-def build(environment, network, config, version=None, args=[], moniker=None, chain_id=None):
+def build(environment, network, config, provenance_branch=None, version=None, args=[], moniker=None, chain_id=None):
     root_path = config['saveDir'] + "forge"
     provenance_path = config['saveDir'] + "forge" + "/provenance"
     # Get version and checkout to proper provenance tag
-    if not version:
+    if not version and not provenance_branch:
         version = utils.get_version_info(network, environment, provenance_path)
-    else:
+    elif not provenance_branch and version:
         repo = git.Repo(provenance_path)
+        repo.git.reset('--hard')
+        repo.git.checkout('main')
+        repo.remotes.origin.pull()
         try:
             repo.git.checkout("-f", "tags/{}".format(version), "-b", version)
         except git.exc.GitCommandError:
             repo.git.checkout("-f", version)
+    elif provenance_branch:
+        version = provenance_branch
+        repo = git.Repo(provenance_path)
+        repo.git.reset('--hard')
+        repo.git.checkout('main')
+        repo.remotes.origin.pull()
+        try:
+            branches = [branch.name for branch in repo.remote().refs]
+            if provenance_branch in branches:
+                repo.git.checkout(provenance_branch)
+            else:
+                print("The entered branch, {}, does not exist.".format(provenance_branch))
+                exit()
+        except git.exc.GitCommandError:
+            repo.git.checkout("-f", provenance_branch)
     # Construct binary for provenance
     args = utils.collect_args(args)
 
@@ -77,6 +95,9 @@ def build(environment, network, config, version=None, args=[], moniker=None, cha
                     utils.handle_running_node(process_information)
                 spawnDaemon(run_command, version, network, config, log_path)
             elif start_node.lower() == 'n':
+                config[network][version]['run-command'] = run_command
+                config[network][version]['log-path'] = log_path
+                utils.save_config(config)
                 print("Exiting. You can run the node using forge by running \n'forge -sn -network {} -rv {}\nor on your own by opening a terminal and running \n{}".format(network, version, run_command))
                 exit()
 
@@ -102,16 +123,18 @@ def build(environment, network, config, version=None, args=[], moniker=None, cha
 
         # Download genesis file which is used to bring up the node with certain information
         download_genesis = None
-        if os.path.exists(build_path + "/config/genesis.json"):
+        if os.path.exists(build_path + "/config"):
             genesis_complete = False
             while not genesis_complete:
                 try:
                     download_genesis = input("The genesis file already exists, would you like to overwrite the existing file?[y]/n:\n")
-                    if download_genesis == None or download_genesis.lower() == 'y':
+                    if not download_genesis or download_genesis.lower() == 'y':
                         print("Downloading genesis file...")
                         genesis_json_res = requests.get(global_.GENESIS_JSON_URL.format(network, environment)).text
                         open(build_path + "/config/genesis.json", 'w').write(genesis_json_res)
-                except ValueError:
+                        genesis_complete = True
+                except ValueError as e:
+                    print(e)
                     continue
         
 
@@ -141,6 +164,9 @@ def build(environment, network, config, version=None, args=[], moniker=None, cha
                     utils.handle_running_node(process_information)
                 spawnDaemon(run_command, version, network, config, log_path)
             elif start_node.lower() == 'n':
+                config[network][version]['run-command'] = run_command
+                config[network][version]['log-path'] = log_path
+                utils.save_config(config)
                 print("Exiting. You can run the node using forge by running \n'forge -sn -network {} -rv {}\nor on your own by opening a terminal and running \n{}".format(network, version, run_command))
                 exit()
 
@@ -193,6 +219,8 @@ def spawnDaemon(node_command, version, network, config, log_path):
 
 def start_node(node_command, version, network, config, log_path):
     log = open(log_path, 'w+')
+    print('Running {}'.format(node_command))
+    print('You can view the logs here: {}'.format(log_path))
     process = subprocess.Popen(node_command, shell=True, stdout=log, stderr=log)
     if network == 'localnet':
         config[network][version]['run-command'] = node_command
