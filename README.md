@@ -14,5 +14,22 @@ forge
 
 * The repo would then checkout to the release version and the binaries would be built, genesis file downloaded/constructed, and a command to run the node would be output to the console.
 
+
+### Forge comes with command line tools that can speed up the process.
+
+To get you started with a couple commands:
+
+Initialize and possibly start a mainnet node without wizard:
+```sh
+forge -ba WITH_CLEVELDB=no -n mainnet
+```
+Initialize and possibly start a localnet:
+```sh
+forge -rv v1.7.4 -ba WITH_CLEVELDB=no -n localnet -m aMoniker -cid theChainId
+```
+For a list of all commands:
+```sh
+forge --help
+```
 ## Version Info
 * Python 3.6
