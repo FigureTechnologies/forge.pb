@@ -29,6 +29,9 @@ def get_version_info(network, environment, provenance_path):
         filtered_tags = get_versions(provenance_path)
         for index, version_tag in zip(range(5), filtered_tags[::-1]):
             print(version_tag)
+    if not os.path.exists(provenance_path):
+        print("Cloning Repository for binary construction, this can take a few seconds...")
+        git.Repo.clone_from(global_.PROVENANCE_REPO, provenance_path)
     repo = git.Repo(provenance_path)
 
     # In case of localnet, list release versions for user to select

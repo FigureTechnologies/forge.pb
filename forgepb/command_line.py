@@ -63,6 +63,7 @@ def start(edit_config, network, save_loc, list_release_versions, list_config, st
             provenance_path = config['saveDir'] + "forge" + "/provenance"
         except Exception:
             print("You haven't initialized a node. Try running 'forge' to start the wizard.")
+            exit()
         if not network or not release_version in utils.get_versions(provenance_path):
             print("Starting a node depends on valid values for release-version and network.")
         else:

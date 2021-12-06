@@ -127,9 +127,14 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
             genesis_complete = False
             while not genesis_complete:
                 try:
-                    download_genesis = input("The genesis file already exists, would you like to overwrite the existing file?[y]/n:\n")
-                    if not download_genesis or download_genesis.lower() == 'y':
-                        print("Downloading genesis file...")
+                    if os.path.exists(build_path + "/config/genesis.json"):
+                        download_genesis = input("The genesis file already exists, would you like to overwrite the existing file?[y]/n:\n")
+                        if not download_genesis or download_genesis.lower() == 'y':
+                            print("Downloading genesis file...")
+                            genesis_json_res = requests.get(global_.GENESIS_JSON_URL.format(network, environment)).text
+                            open(build_path + "/config/genesis.json", 'w').write(genesis_json_res)
+                            genesis_complete = True
+                    else:
                         genesis_json_res = requests.get(global_.GENESIS_JSON_URL.format(network, environment)).text
                         open(build_path + "/config/genesis.json", 'w').write(genesis_json_res)
                         genesis_complete = True
@@ -164,8 +169,8 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
                     utils.handle_running_node(process_information)
                 spawnDaemon(run_command, version, network, config, log_path)
             elif start_node.lower() == 'n':
-                config[network][version]['run-command'] = run_command
-                config[network][version]['log-path'] = log_path
+                config[network]['run-command'] = run_command
+                config[network]['log-path'] = log_path
                 utils.save_config(config)
                 print("Exiting. You can run the node using forge by running \n'forge -sn -network {} -rv {}\nor on your own by opening a terminal and running \n{}".format(network, version, run_command))
                 exit()

@@ -1,9 +1,10 @@
 import os
 
-from forgepb import utils, config_handler
+from forgepb import global_, utils, config_handler
 
 # Entry point for wizard
 def main():
+    print(global_.FORGE)
     process_information = utils.view_running_node_info()
     print(process_information['message'])
     while True:

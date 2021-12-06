@@ -13,3 +13,18 @@ GENESIS_JSON_URL = "https://raw.githubusercontent.com/provenance-io/{}/main/{}/g
 PROVENANCE_REPO = "https://github.com/provenance-io/provenance.git"
 CONFIG_PATH = os.path.join(os.path.expanduser('~'), ".pio")
 COMMAND_REQUIRE_MAP = {'boot_args': 'network'}
+
+FORGE = '''
+__________________________________________
+___  ____/_  __ \\__  __ \\_  ____/__  ____/
+__  /_   _  / / /_  /_/ /  / __ __  __/   
+_  __/   / /_/ /_  _, _// /_/ / _  /___   
+/_/      \\____/ /_/ |_| \____/  /_____/   
+
+            ____|\\
+            ----|_|
+            .-------..___
+            '-._     :_.-'
+                ) _ ( 
+               '-' '-'
+'''
