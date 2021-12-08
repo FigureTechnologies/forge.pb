@@ -191,7 +191,7 @@ def view_running_node_info():
                     save_config(config)
                     return {
                         "node-running": False,
-                        "messagge": "A node was running but stopped unexpectedly:\nNetwork: {}    Provenance Version: {}    PID: {}    Status: Not Running\nThis information will be deleted so a new node can be started. Logs can be found in the forge save directory for the individual nodes.".format(node_information['network'], node_information['version'], node_information['pid'])
+                        "message": "A node was running but stopped unexpectedly:\nNetwork: {}    Provenance Version: {}    PID: {}    Status: Not Running\nThis information will be deleted so a new node can be started. Logs can be found in the forge save directory for the individual nodes.".format(node_information['network'], node_information['version'], node_information['pid'])
                     }
                 else:
                     return {
