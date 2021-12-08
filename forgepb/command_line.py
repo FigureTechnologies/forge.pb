@@ -67,13 +67,23 @@ def start(edit_config, network, save_loc, list_release_versions, list_config, st
         if not network or not release_version in utils.get_versions(provenance_path):
             print("Starting a node depends on valid values for release-version and network.")
         else:
-            node_info = config[network][release_version]
-            builder.spawnDaemon(node_info['run-command'], release_version, network, config, node_info['log-path'])
+            try:
+                if network == 'localnet':
+                    node_info = config[network][release_version]
+                else:
+                    node_info = config[network]
+                builder.spawnDaemon(node_info['run-command'], release_version, network, config, node_info['log-path'])
+            except:
+                print("The combination of network {} and version {} hasn't been initialized yet".format(network, release_version))
         exit()
 
     # Display information on the node that is running
     if status:
-        print(utils.view_running_node_info()['message'])
+        node_status = utils.view_running_node_info()['message']
+        if node_status:
+            print(utils.view_running_node_info()['message'])
+        else:
+            print("There currently isn't a node running.")
         exit()
 
     # List the config information about a localnet node. Including mnemonic and validator info
