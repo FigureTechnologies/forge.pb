@@ -270,3 +270,22 @@ def get_remote_branches(repo=None, provenance_path=None):
     if repo == None:
         repo = git.Repo(provenance_path)
     return [branch.name for branch in repo.remote().refs]
+
+def take_start_node_input(run_command, version, network, config, log_path):
+    input_entered = False
+    while not input_entered:
+        start_node = input("Start node? [y]/n: ")
+        if not start_node:
+            start_node = 'y'
+        if start_node.lower() == 'y':
+            input_entered = True
+            process_information = utils.view_running_node_info()
+            if process_information['node-running']:
+                utils.handle_running_node(process_information)
+            builder.spawnDaemon(run_command, version, network, config, log_path)
+        elif start_node.lower() == 'n':
+            config[network][version]['run-command'] = run_command
+            config[network][version]['log-path'] = log_path
+            utils.save_config(config)
+            print("Exiting. You can run the node using forge by running \n'forge -sn -network {} -rv {}\nor on your own by opening a terminal and running \n{}".format(network, version, run_command))
+            exit()
