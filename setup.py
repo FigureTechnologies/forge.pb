@@ -7,7 +7,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="forge.pb",
-    version="1.1.4",
+    version="1.1.6",
     url='https://github.com/provenance-io/forge.pb',
     author='Wyatt Baker',
     author_email='wbaker@figure.com',

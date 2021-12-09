@@ -45,7 +45,7 @@ def start(edit_config, network, save_loc, list_release_versions, list_config, st
             config = config_handler.set_build_location()
             provenance_path = config['saveDir'] + "forge" + "/provenance"
             git.Repo.clone_from(global_.PROVENANCE_REPO, provenance_path)
-            branches = utils.get_remote_branches(provenance_path=provenance_path)
+        branches = utils.get_remote_branches(provenance_path=provenance_path)
         print(branches)
         exit()
     # Stop the currently running node
@@ -57,24 +57,45 @@ def start(edit_config, network, save_loc, list_release_versions, list_config, st
     if start_node:
         process_information = utils.view_running_node_info()
         if process_information['node-running']:
-            utils.handle_running_node(process_information)
+            utils.stop_active_node(process_information)
         try:
             config = utils.load_config()
             provenance_path = config['saveDir'] + "forge" + "/provenance"
-        except Exception:
-            print("You haven't initialized a node. Try running 'forge' to start the wizard.")
-            exit()
-        if not network or not release_version in utils.get_versions(provenance_path):
-            print("Starting a node depends on valid values for release-version and network.")
-        else:
-            try:
-                if network == 'localnet':
-                    node_info = config[network][release_version]
+        except:
+            config = config_handler.check_save_location(os.path.expanduser('~'))['config']
+            provenance_path = config['saveDir'] + "forge" + "/provenance"
+            print("Cloning repo, this can take a few seconds...")
+            git.Repo.clone_from(global_.PROVENANCE_REPO, provenance_path)
+        if not release_version and not provenance_branch and not network:
+            provenance_branch = 'origin/main'
+        if not moniker and not network:
+            if provenance_branch:
+                moniker = "{}-{}".format(network, provenance_branch)
+            else:
+                moniker = "{}-{}".format(network, release_version)
+        if not chain_id and not network:
+            if provenance_branch:
+                chain_id = "{}-{}".format(network, provenance_branch)
+            else:
+                chain_id = "{}-{}".format(network, release_version)
+        if not network:
+            network = 'localnet'
+        if not boot_args:
+            boot_args = ['WITH_CLEVELDB=no']
+        try:
+            if network == 'localnet':
+                if provenance_branch:
+                    node_info = config[network][provenance_branch]
                 else:
-                    node_info = config[network]
+                    node_info = config[network][release_version]
+            else:
+                node_info = config[network]
+            if provenance_branch:
+                builder.spawnDaemon(node_info['run-command'], provenance_branch, network, config, node_info['log-path'])
+            else:
                 builder.spawnDaemon(node_info['run-command'], release_version, network, config, node_info['log-path'])
-            except:
-                print("The combination of network {} and version {} hasn't been initialized yet".format(network, release_version))
+        except KeyError:
+            builder.build(global_.CHAIN_ID_STRINGS[network], network, config, provenance_branch, release_version, list(boot_args), moniker, chain_id, start_node=True)
         exit()
 
     # Display information on the node that is running

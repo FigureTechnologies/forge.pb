@@ -25,7 +25,7 @@ forge -ba WITH_CLEVELDB=no -n mainnet
 ```
 Initialize and possibly start a localnet:
 ```sh
-forge -rv v1.7.4 -ba WITH_CLEVELDB=no -n localnet -m aMoniker -cid theChainId
+forge -rv v1.7.5 -ba WITH_CLEVELDB=no -n localnet -m aMoniker -cid theChainId
 ```
 For a list of all commands:
 ```sh

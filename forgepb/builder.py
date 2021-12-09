@@ -1,7 +1,6 @@
 import os
 import stat
 from shutil import copyfile
-import re
 import git
 import requests
 import subprocess
@@ -10,7 +9,7 @@ import datetime
 from forgepb import utils, global_
 
 # Build a node in the given environment and network
-def build(environment, network, config, provenance_branch=None, version=None, args=[], moniker=None, chain_id=None):
+def build(environment, network, config, provenance_branch=None, version=None, args=[], moniker=None, chain_id=None, start_node=None):
     root_path = config['saveDir'] + "forge"
     provenance_path = config['saveDir'] + "forge" + "/provenance"
     # Get version and checkout to proper provenance tag
@@ -81,9 +80,11 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
         utils.persist_localnet_information(build_path, config, version, validator_info)
         
         run_command = "{}/bin/provenanced start --home {}".format(build_path, build_path)
-        log_path = '{}/logs/{}.txt'.format(build_path, datetime.datetime.now().replace(' ', '-'))
-        
-        utils.take_start_node_input(run_command, version, network, config, log_path)
+        log_path = '{}/logs/{}.txt'.format(build_path, str(datetime.datetime.now()).replace(' ', '-'))
+        if(start_node):
+            spawnDaemon(run_command, version, network, config, log_path)
+        else:
+            utils.take_start_node_input(run_command, version, network, config, log_path)
 
     # Handle mainnet and testnet node construction
     else:
@@ -141,7 +142,10 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
         run_command = "{}/bin/provenanced start {} --home {}".format(build_path, seed_info, build_path)
         log_path =  '{}/logs/{}.txt'.format(build_path, str(datetime.datetime.now()).replace(' ', '-'))
 
-        utils.take_start_node_input(run_command, version, network, config, log_path)
+        if(start_node):
+            spawnDaemon(run_command, version, network, config, log_path)
+        else:
+            utils.take_start_node_input(run_command, version, network, config, log_path)
 
 # Localnet generate genesis and gentx
 def populate_genesis(build_path, moniker, chain_id):
