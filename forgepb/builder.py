@@ -6,7 +6,9 @@ import requests
 import subprocess
 import datetime
 
-from forgepb import utils, global_
+import utils
+import global_
+
 
 # Build a node in the given environment and network
 def build(environment, network, config, provenance_branch=None, version=None, args=[], moniker=None, chain_id=None, start_node=None):

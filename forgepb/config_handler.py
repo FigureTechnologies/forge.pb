@@ -1,6 +1,8 @@
 import os
 
-from forgepb import global_, utils
+import global_
+import utils
+
 
 # Take user input for save location
 def set_build_location(path=None):
