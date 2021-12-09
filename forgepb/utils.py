@@ -63,6 +63,15 @@ def get_version_info(network, environment, provenance_path):
     return version
 
 
+def get_latest_version():
+    import urllib.request
+    import json
+    path = "https://api.github.com/repos/provenance-io/provenance/releases/latest"
+    contents = urllib.request.urlopen(path)
+    release = json.load(contents)
+    return release["tag_name"]
+
+
 # Returns a list of version tags for localnet to use
 def get_versions(provenance_path):
     # Get git repo if it doesn't already exist
@@ -197,25 +206,39 @@ def persist_localnet_information(path, config, version, information):
 
 # Fetch info stored for currently executing process.
 def view_running_node_info():
-    if not exists_config():
-        return None, "no forge config"
-
-    config = load_config()
-    if not config['running-node-info']:
-        return None, "node not started"
-
-    try:
-        node_information = config['running-node-info']
-        process = psutil.Process(node_information['pid'])
-        # Can't match by name here. Linux runs subcommands under a subshell (sh -c ...).
-        # Verify the process is running. psutil has catches in place to check for pid reuse.
-        if not process.is_running():
-            return None, "cannot locate process"
-
-        return node_information, "running"
-    except Exception as e:
-        return None, str(e)
-
+    if os.path.exists(global_.CONFIG_PATH + "/config.json"):
+        config = utils.load_config()
+        if config['running-node']:
+            try:
+                node_information = config['running-node-info']
+                process = psutil.Process(node_information['pid'])
+                print(process.name())
+                if process.name() != 'provenanced':
+                    config['running-node'] = False
+                    config['running-node-info'] = {}
+                    save_config(config)
+                    return {
+                        "node-running": True,
+                        "message": "A node was running but stopped unexpectedly:\nNetwork: {}    Provenance Version: {}    PID: {}    Status: Not Running\nThis information will be deleted so a new node can be started. Logs can be found in the forge save directory for the individual nodes.".format(node_information['network'], node_information['version'], node_information['pid'])
+                    }
+                else:
+                    return {
+                        "node-running": True,
+                        "process": process,
+                        "message": "A node is currently running:\nNetwork: {}    Provenance Version: {}    PID: {}    Status: {}".format(node_information['network'], node_information['version'], node_information['pid'], process.status())
+                    }
+            except Exception as e:
+                config['running-node'] = False
+                config['running-node-info'] = {}
+                save_config(config)
+                return {
+                    "node-running": False,
+                    "message": "A node was running but stopped unexpectedly:\nNetwork: {}    Provenance Version: {}    PID: {}    Status: Not Running\nThis information will be deleted so a new node can be started. Logs can be found in the forge save directory for the individual nodes.".format(node_information['network'], node_information['version'], node_information['pid'])
+                }
+    return {
+        "node-running": False,
+        "message": ""
+    }
 
 def stop_active_node(process_information):
     if not process_information:
@@ -275,7 +298,7 @@ def handle_running_node(process_information):
             node_stopped = True
         elif start_node.lower() == 'n':
             print('Exiting...')
-            exit()
+            return
 
 
 def get_remote_branches(repo=None, provenance_path=None):
@@ -292,15 +315,13 @@ def take_start_node_input(run_command, version, network, config, log_path):
             start_node = 'y'
         if start_node.lower() == 'y':
             input_entered = True
-            process_information, _ = view_running_node_info()
-            if process_information:
+            process_information = view_running_node_info()
+            if process_information['node-running']:
                 handle_running_node(process_information)
             builder.spawnDaemon(run_command, version, network, config, log_path)
         elif start_node.lower() == 'n':
             config[network][version]['run-command'] = run_command
             config[network][version]['log-path'] = log_path
             save_config(config)
-            print(
-                "Exiting. You can run the node using forge by running \n'forge -sn -network {} -rv {}\nor on your own by opening a terminal and running \n{}".format(
-                    network, version, run_command))
-            exit()
+            print("Exiting. You can run the node using forge by running \n'forge -sn -network {} -rv {}\nor on your own by opening a terminal and running \n{}".format(network, version, run_command))
+            return

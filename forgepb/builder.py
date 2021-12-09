@@ -40,7 +40,7 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
                 repo.git.checkout(provenance_branch)
             else:
                 print("The entered branch, {}, does not exist.".format(provenance_branch))
-                exit()
+                return
         except git.exc.GitCommandError:
             repo.git.checkout("-f", provenance_branch)
     # Construct binary for provenance
@@ -190,7 +190,7 @@ def spawnDaemon(node_command, version, network, config, log_path):
     try:
         pid = os.fork()
         if pid > 0:
-            exit()
+            return
     except OSError as e:
         print("fork #1 failed: {} ({})".format(e.errno, e.strerror))
 
