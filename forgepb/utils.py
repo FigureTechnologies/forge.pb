@@ -53,6 +53,16 @@ def get_version_info(network, environment, provenance_path):
         repo.git.checkout("-f", version)
     return version
 
+
+def get_latest_version():
+    import urllib.request
+    import json
+    path = "https://api.github.com/repos/provenance-io/provenance/releases/latest"
+    contents = urllib.request.urlopen(path)
+    release = json.load(contents)
+    return release["tag_name"]
+
+
 # Returns a list of version tags for localnet to use
 def get_versions(provenance_path):
     # Get git repo if it doesn't already exist
@@ -185,12 +195,13 @@ def view_running_node_info():
             try:
                 node_information = config['running-node-info']
                 process = psutil.Process(node_information['pid'])
+                print(process.name())
                 if process.name() != 'provenanced':
                     config['running-node'] = False
                     config['running-node-info'] = {}
                     save_config(config)
                     return {
-                        "node-running": False,
+                        "node-running": True,
                         "message": "A node was running but stopped unexpectedly:\nNetwork: {}    Provenance Version: {}    PID: {}    Status: Not Running\nThis information will be deleted so a new node can be started. Logs can be found in the forge save directory for the individual nodes.".format(node_information['network'], node_information['version'], node_information['pid'])
                     }
                 else:
@@ -264,7 +275,7 @@ def handle_running_node(process_information):
             node_stopped = True
         elif start_node.lower() == 'n':
             print('Exiting...')
-            exit()
+            return
 
 def get_remote_branches(repo=None, provenance_path=None):
     if repo == None:
@@ -288,4 +299,4 @@ def take_start_node_input(run_command, version, network, config, log_path):
             config[network][version]['log-path'] = log_path
             utils.save_config(config)
             print("Exiting. You can run the node using forge by running \n'forge -sn -network {} -rv {}\nor on your own by opening a terminal and running \n{}".format(network, version, run_command))
-            exit()
+            return
