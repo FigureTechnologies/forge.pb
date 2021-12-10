@@ -34,10 +34,10 @@ def command_required_option_from_option(require_name):
 @click.option('-lc', '--list-config', 'list_config', is_flag=True, help='Display the saved config for a given network, including mnemonic and validator information')
 @click.option('-ns', '--node-status', 'status', is_flag=True, help='Display running node status')
 @click.option('-sn', '--start-node', 'start_node', is_flag=True, help='Starts node with given network and release version')
-@click.option('-tn', '--terminate-node', 'terminate_node', is_flag=True, help='Terminates the running node')
+@click.option('-st', '--stop-node', 'stop_node', is_flag=True, help='Stops the running node')
 @click.option('-pb', '--provenance-branch', 'provenance_branch', type=click.STRING, help='A branch of Provenance to be used to build the binary instead of tag')
 @click.option('-lspb', '--list-provenance-branches', 'list_provenance_branches', is_flag=True, help='List all remote branches of Provenance Repository')
-def start(edit_config, network, save_loc, list_release_versions, list_config, status, start_node, terminate_node, provenance_branch, release_version, boot_args, moniker, chain_id, list_provenance_branches):
+def start(edit_config, network, save_loc, list_release_versions, list_config, status, start_node, stop_node, provenance_branch, release_version, boot_args, moniker, chain_id, list_provenance_branches):
     if list_provenance_branches:
         try:
             config = utils.load_config()
@@ -50,7 +50,7 @@ def start(edit_config, network, save_loc, list_release_versions, list_config, st
         print(branches)
         exit()
     # Stop the currently running node
-    if terminate_node:
+    if stop_node:
         process_information, _ = utils.view_running_node_info()
         utils.stop_active_node(process_information)
         exit()
