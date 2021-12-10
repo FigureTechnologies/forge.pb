@@ -83,7 +83,7 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
         validator_info = populate_genesis(build_path, moniker, chain_id)
         utils.persist_localnet_information(build_path, config, version, validator_info)
         
-        run_command = "{}/bin/provenanced start --home {}".format(build_path, build_path)
+        run_command = "{}/bin/provenanced start --home {}".format(build_path, build_path).split(" ")
         log_path = '{}/logs/{}.txt'.format(build_path, str(datetime.datetime.now()).replace(' ', '-'))
         if(start_node):
             spawnDaemon(run_command, version, network, config, log_path)
