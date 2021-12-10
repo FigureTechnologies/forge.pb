@@ -6,8 +6,7 @@ import requests
 import subprocess
 import datetime
 
-import utils
-import global_
+from forgepb import utils, global_
 
 
 # Build a node in the given environment and network
@@ -144,7 +143,7 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
         config[network]['version'] = version
         utils.save_config(config)
 
-        run_command = "{}/bin/provenanced start {} --home {}".format(build_path, seed_info, build_path)
+        run_command = "{}/bin/provenanced start {} --home {}".format(build_path, seed_info, build_path).split(" ")
         log_path =  '{}/logs/{}.txt'.format(build_path, str(datetime.datetime.now()).replace(' ', '-'))
 
         if(start_node):
@@ -188,8 +187,8 @@ def spawnDaemon(node_command, version, network, config, log_path):
 
     os.setsid()
 
-    try: 
-        pid = os.fork() 
+    try:
+        pid = os.fork()
         if pid > 0:
             exit()
     except OSError as e:
@@ -203,7 +202,7 @@ def start_node(node_command, version, network, config, log_path):
     log = open(log_path, 'w+')
     print('Running {}'.format(node_command))
     print('You can view the logs here: {}'.format(log_path))
-    process = subprocess.Popen(node_command, shell=True, stdout=log, stderr=log)
+    process = subprocess.Popen(node_command, shell=False, stdout=log, stderr=log)
     if network == 'localnet':
         config[network][version]['run-command'] = node_command
         config[network][version]['log-path'] = log_path

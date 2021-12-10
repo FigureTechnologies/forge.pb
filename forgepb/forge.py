@@ -1,6 +1,4 @@
-import config_handler
-import global_
-import utils
+from forgepb import config_handler, global_, utils
 
 
 # Entry point for wizard

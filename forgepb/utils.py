@@ -6,9 +6,7 @@ import git
 import psutil
 import requests
 
-import builder
-import config_handler
-import global_
+from forgepb import builder, config_handler, global_
 
 
 # Pull existing config from file 
@@ -200,11 +198,11 @@ def persist_localnet_information(path, config, version, information):
 # Fetch info stored for currently executing process.
 def view_running_node_info():
     if not exists_config():
-        return None, "no config"
+        return None, "no forge config"
 
     config = load_config()
     if not config['running-node-info']:
-        return None, "no running config"
+        return None, "node not started"
 
     try:
         node_information = config['running-node-info']
@@ -225,7 +223,7 @@ def stop_active_node(process_information):
         return
 
     process = psutil.Process(process_information['pid'])
-    process.terminate()
+    process.kill()
 
     # Clear the running info only on stop.
     config = load_config()

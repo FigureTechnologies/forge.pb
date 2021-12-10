@@ -1,7 +1,6 @@
 import os
 
-import global_
-import utils
+from forgepb import global_, utils
 
 
 # Take user input for save location

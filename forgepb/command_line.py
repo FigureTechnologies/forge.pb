@@ -4,11 +4,7 @@ import os
 import click
 import git
 
-import builder
-import config_handler
-import forge
-import global_
-import utils
+from forgepb import builder, config_handler, forge, global_, utils
 
 
 # Require network flag when -ba is given
@@ -105,11 +101,11 @@ def start(edit_config, network, save_loc, list_release_versions, list_config, st
 
     # Display information on the node that is running
     if status:
-        node_status, _ = utils.view_running_node_info()
+        node_status, message = utils.view_running_node_info()
         if node_status:
             print(json.dumps(node_status, indent=4))
         else:
-            print("There currently isn't a node running.")
+            print(message)
         exit()
 
     # List the config information about a localnet node. Including mnemonic and validator info
@@ -177,7 +173,6 @@ def start(edit_config, network, save_loc, list_release_versions, list_config, st
     else:
         # Start wizard at the beginning
         forge.main()
-
 
 if __name__ == '__main__':
     start()
