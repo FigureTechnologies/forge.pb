@@ -1,10 +1,11 @@
+import json
 import os
 
 import click
-import json
 import git
 
-from forgepb import forge, global_, builder, utils, config_handler
+from forgepb import builder, config_handler, forge, global_, utils
+
 
 # Require network flag when -ba is given
 def command_required_option_from_option(require_name):
@@ -50,13 +51,13 @@ def start(edit_config, network, save_loc, list_release_versions, list_config, st
         exit()
     # Stop the currently running node
     if terminate_node:
-        process_information = utils.view_running_node_info()
+        process_information, _ = utils.view_running_node_info()
         utils.stop_active_node(process_information)
         exit()
     # Start a node
     if start_node:
-        process_information = utils.view_running_node_info()
-        if process_information['node-running']:
+        process_information, _ = utils.view_running_node_info()
+        if process_information:
             utils.stop_active_node(process_information)
         try:
             config = utils.load_config()
@@ -100,11 +101,11 @@ def start(edit_config, network, save_loc, list_release_versions, list_config, st
 
     # Display information on the node that is running
     if status:
-        node_status = utils.view_running_node_info()['message']
+        node_status, message = utils.view_running_node_info()
         if node_status:
-            print(utils.view_running_node_info()['message'])
+            print(json.dumps(node_status, indent=4))
         else:
-            print("There currently isn't a node running.")
+            print(message)
         exit()
 
     # List the config information about a localnet node. Including mnemonic and validator info
