@@ -2,8 +2,9 @@ import os
 
 from forgepb import global_, utils
 
+
 # Take user input for save location
-def set_build_location():
+def set_build_location(path=None):
     valid_path = False
     while not valid_path:
         save_path = input("Enter a valid absolute path for the node to be initialized in. [{}]\n".format(os.path.expanduser('~')))
@@ -31,6 +32,7 @@ def check_save_location(save_path):
         if not path_str.endswith('/'):
             path_str = path_str + '/'
         config['saveDir'] = path_str
+        config['running-node'] = False
         utils.save_config(config)
         return {'success': True, 'config': config}
     else:

@@ -9,6 +9,7 @@ GitPython==3.1.18
 idna==3.3
 importlib-metadata==4.8.2
 networkx==2.5.1
+psutil==5.8.0
 python-dateutil==2.8.2
 requests==2.26.0
 six==1.16.0
