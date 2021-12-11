@@ -7,7 +7,8 @@ from forgepb import global_, utils
 def set_build_location(path=None):
     valid_path = False
     while not valid_path:
-        save_path = input("Enter a valid absolute path for the node to be initialized in. [{}]\n".format(os.path.expanduser('~')))
+        save_path = input("Enter a valid absolute path for the node to be initialized in. [{}]\n".format(
+            os.path.expanduser('~')))
         if not save_path:
             save_path = os.path.expanduser('~')
         result = check_save_location(save_path)
@@ -16,6 +17,8 @@ def set_build_location(path=None):
             return result['config']
 
 # Check that the save location given is valid display message if failed
+
+
 def check_save_location(save_path):
     if os.path.exists(global_.CONFIG_PATH + "/config.json"):
         config = utils.load_config()

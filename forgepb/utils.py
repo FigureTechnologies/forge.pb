@@ -1,6 +1,5 @@
 import json
 import os
-import re
 
 import git
 import psutil
@@ -9,7 +8,7 @@ import requests
 from forgepb import builder, config_handler, global_
 
 
-# Pull existing config from file 
+# Pull existing config from file
 def load_config():
     config_file = open(global_.CONFIG_PATH + "/config.json")
     return json.load(config_file)
@@ -27,7 +26,8 @@ def save_config(config_data):
 
 # Get version information and checkout to proper provenance tag
 def get_version_info(network, environment, provenance_path):
-    release_tag = requests.get(global_.GENESIS_VERSION_TXT_URL.format(network, environment))
+    release_tag = requests.get(
+        global_.GENESIS_VERSION_TXT_URL.format(network, environment))
     if release_tag.status_code != 200:
         version = None
     else:
@@ -37,9 +37,6 @@ def get_version_info(network, environment, provenance_path):
         filtered_tags = get_versions(provenance_path)
         for index, version_tag in zip(range(5), filtered_tags[::-1]):
             print(version_tag)
-    if not os.path.exists(provenance_path):
-        print("Cloning Repository for binary construction, this can take a few seconds...")
-        git.Repo.clone_from(global_.PROVENANCE_REPO, provenance_path)
     repo = git.Repo(provenance_path)
 
     # In case of localnet, list release versions for user to select
@@ -62,32 +59,9 @@ def get_version_info(network, environment, provenance_path):
         repo.git.checkout("-f", version)
     return version
 
-
-def get_latest_version():
-    import urllib.request
-    import json
-    path = "https://api.github.com/repos/provenance-io/provenance/releases/latest"
-    contents = urllib.request.urlopen(path)
-    release = json.load(contents)
-    return release["tag_name"]
-
-
-# Returns a list of version tags for localnet to use
-def get_versions(provenance_path):
-    # Get git repo if it doesn't already exist
-    if not os.path.exists(provenance_path):
-        print("Cloning Repository for binary construction, this can take a few seconds...")
-        git.Repo.clone_from(global_.PROVENANCE_REPO, provenance_path)
-
-    repo = git.Repo(provenance_path)
-    repo.git.checkout('-f', "main")
-    repo.remotes.origin.pull()
-
-    regex = re.compile(r'v[0-9]+\.[0-9]+\.[0-9]+$')
-    return [str(i) for i in repo.tags if regex.match(str(i))]
-
-
 # take user input for selecting network
+
+
 def select_network():
     if not os.path.exists(global_.CONFIG_PATH + "/config.json"):
         config = config_handler.set_build_location()
@@ -99,7 +73,8 @@ def select_network():
         try:
             prompt = "Select Network by Number:\n"
             for index in range(len(global_.NETWORK_STRINGS)):
-                prompt += "({}): {}\n".format(index + 1, global_.NETWORK_STRINGS[index])
+                prompt += "({}): {}\n".format(index + 1,
+                                              global_.NETWORK_STRINGS[index])
             prompt += "({}): cancel\n".format(len(global_.NETWORK_STRINGS) + 1)
             network = int(input(prompt))
         except ValueError:
@@ -124,7 +99,8 @@ def collect_moniker_chain_id(version, config):
         default_moniker = "localnet-{}".format(version)
         default_chain_id = "localnet-{}".format(version)
     while localnet_moniker == "":
-        localnet_moniker = input("Enter a moniker for your localnet[{}]:\n".format(default_moniker))
+        localnet_moniker = input(
+            "Enter a moniker for your localnet[{}]:\n".format(default_moniker))
         if not localnet_moniker:
             localnet_moniker = default_moniker
         else:
@@ -132,7 +108,8 @@ def collect_moniker_chain_id(version, config):
                 if not (letter.isalnum() or letter in "-_."):
                     localnet_moniker = ""
     while localnet_chain_id == "":
-        localnet_chain_id = input("Enter a chain-id for your localnet[{}]:\n".format(default_chain_id))
+        localnet_chain_id = input(
+            "Enter a chain-id for your localnet[{}]:\n".format(default_chain_id))
         if not localnet_chain_id:
             localnet_chain_id = default_chain_id
         else:
@@ -150,7 +127,8 @@ def collect_args(args):
     args_complete = args != []
     while not args_complete:
         try:
-            cleveldb = input("Build environment with C Level DB? Usually not required for local testing. [No]\n")
+            cleveldb = input(
+                "Build environment with C Level DB? Usually not required for local testing. [No]\n")
             if not cleveldb:
                 args.append("WITH_CLEVELDB=no")
                 args_complete = True
@@ -172,7 +150,8 @@ def persist_localnet_information(path, config, version, information):
     if not information.startswith('override the existing name validator [y/N]: Error: aborted'):
         # Remove unused line that can happen when validator already exists
         if information[0] == 'o':
-            information = information.replace('override the existing name validator [y/N]: \n', '')
+            information = information.replace(
+                'override the existing name validator [y/N]: \n', '')
         elif information.startswith('\n'):
             information = information[2:]
         print(information)
@@ -181,7 +160,8 @@ def persist_localnet_information(path, config, version, information):
             '**Important** write this mnemonic phrase in a safe place.\nIt is the only way to recover your account if you ever forget your password.')
 
         # Construct json object from validator information
-        validator_text_raw = information[0].replace("'{", "{").replace("}'", "}").replace('  ', '').split('-')
+        validator_text_raw = information[0].replace(
+            "'{", "{").replace("}'", "}").replace('  ', '').split('-')
         validator_text_raw = list(filter(None, validator_text_raw))
         validator_persist = []
         for validator_obj_raw in validator_text_raw:
@@ -206,39 +186,25 @@ def persist_localnet_information(path, config, version, information):
 
 # Fetch info stored for currently executing process.
 def view_running_node_info():
-    if os.path.exists(global_.CONFIG_PATH + "/config.json"):
-        config = utils.load_config()
-        if config['running-node']:
-            try:
-                node_information = config['running-node-info']
-                process = psutil.Process(node_information['pid'])
-                print(process.name())
-                if process.name() != 'provenanced':
-                    config['running-node'] = False
-                    config['running-node-info'] = {}
-                    save_config(config)
-                    return {
-                        "node-running": True,
-                        "message": "A node was running but stopped unexpectedly:\nNetwork: {}    Provenance Version: {}    PID: {}    Status: Not Running\nThis information will be deleted so a new node can be started. Logs can be found in the forge save directory for the individual nodes.".format(node_information['network'], node_information['version'], node_information['pid'])
-                    }
-                else:
-                    return {
-                        "node-running": True,
-                        "process": process,
-                        "message": "A node is currently running:\nNetwork: {}    Provenance Version: {}    PID: {}    Status: {}".format(node_information['network'], node_information['version'], node_information['pid'], process.status())
-                    }
-            except Exception as e:
-                config['running-node'] = False
-                config['running-node-info'] = {}
-                save_config(config)
-                return {
-                    "node-running": False,
-                    "message": "A node was running but stopped unexpectedly:\nNetwork: {}    Provenance Version: {}    PID: {}    Status: Not Running\nThis information will be deleted so a new node can be started. Logs can be found in the forge save directory for the individual nodes.".format(node_information['network'], node_information['version'], node_information['pid'])
-                }
-    return {
-        "node-running": False,
-        "message": ""
-    }
+    if not exists_config():
+        return None, "no forge config"
+
+    config = load_config()
+    if not 'running-node-info' in config:
+        return None, "node not started"
+
+    try:
+        node_information = config['running-node-info']
+        process = psutil.Process(node_information['pid'])
+        # Can't match by name here. Linux runs subcommands under a subshell (sh -c ...).
+        # Verify the process is running. psutil has catches in place to check for pid reuse.
+        if not process.is_running():
+            return None, "cannot locate process"
+
+        return node_information, "running"
+    except Exception:
+        return None, "Could not find a running node"
+
 
 def stop_active_node(process_information):
     if not process_information:
@@ -260,7 +226,8 @@ def start_node():
         # Display available nodes
         print('Nodes available to be started:')
         if 'localnet' in config:
-            print('Network = localnet:\nVersions: {}'.format(list(config['localnet'].keys())))
+            print('Network = localnet:\nVersions: {}'.format(
+                list(config['localnet'].keys())))
         if 'mainnet' in config:
             print('Network = mainnet')
         if 'testnet' in config:
@@ -282,7 +249,8 @@ def start_node():
                 if version_input in config['localnet'].keys():
                     version = version_input
             node_info = config[network][version]
-        builder.spawnDaemon(node_info['run-command'], version, network, config, node_info['log-path'])
+        builder.spawnDaemon(
+            node_info['run-command'], version, network, config, node_info['log-path'])
     except Exception:
         print("You haven't initialized a node. Try running 'forge' to start the wizard.")
 
@@ -298,13 +266,29 @@ def handle_running_node(process_information):
             node_stopped = True
         elif start_node.lower() == 'n':
             print('Exiting...')
-            return
+            exit()
+
+# Returns a list of version tags for localnet to use
 
 
-def get_remote_branches(repo=None, provenance_path=None):
-    if repo == None:
-        repo = git.Repo(provenance_path)
-    return [branch.name for branch in repo.remote().refs]
+def get_versions():
+    try:
+        tag_info = requests.get(global_.GITHUB_URL + 'tags').json()
+        return [tag['name'] for tag in tag_info]
+    except:
+        print("Something went wrong reaching out to {}".format(
+            global_.GITHUB_URL + 'branches'))
+
+# Returns a list of all remote branches
+
+
+def get_remote_branches():
+    try:
+        branch_info = requests.get(global_.GITHUB_URL + 'branches').json()
+        return [branch['name'] for branch in branch_info]
+    except:
+        print("Something went wrong reaching out to {}".format(
+            global_.GITHUB_URL + 'branches'))
 
 
 def take_start_node_input(run_command, version, network, config, log_path):
@@ -315,13 +299,16 @@ def take_start_node_input(run_command, version, network, config, log_path):
             start_node = 'y'
         if start_node.lower() == 'y':
             input_entered = True
-            process_information = view_running_node_info()
-            if process_information['node-running']:
+            process_information, _ = view_running_node_info()
+            if process_information:
                 handle_running_node(process_information)
-            builder.spawnDaemon(run_command, version, network, config, log_path)
+            builder.spawnDaemon(run_command, version,
+                                network, config, log_path)
         elif start_node.lower() == 'n':
             config[network][version]['run-command'] = run_command
             config[network][version]['log-path'] = log_path
             save_config(config)
-            print("Exiting. You can run the node using forge by running \n'forge -sn -network {} -rv {}\nor on your own by opening a terminal and running \n{}".format(network, version, run_command))
-            return
+            print(
+                "Exiting. You can run the node using forge or on your own by opening a terminal and running \n{}".format(
+                    ' '.join(run_command)))
+            exit()
