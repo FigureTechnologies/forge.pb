@@ -20,7 +20,7 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
     if not version and not provenance_branch:
         version = utils.get_version_info(network, environment, provenance_path)
     elif not provenance_branch and version:
-        if version and version not in utils.get_versions(provenance_path):
+        if version and version not in utils.get_versions():
             print(
                 "The version entered doesn't exist in provenance. Please run 'forge -lsv' to list all versions")
             exit()
@@ -219,7 +219,7 @@ def spawnDaemon(node_command, version, network, config, log_path):
     try:
         pid = os.fork()
         if pid > 0:
-            exit()
+            return
     except OSError as e:
         print("fork #1 failed: {} ({})".format(e.errno, e.strerror))
 

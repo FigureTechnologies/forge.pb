@@ -34,8 +34,8 @@ def get_version_info(network, environment, provenance_path):
         version = release_tag.text.strip('\n')
 
     if network == 'localnet':
-        filtered_tags = get_versions(provenance_path)
-        for index, version_tag in zip(range(5), filtered_tags[::-1]):
+        filtered_tags = get_versions()
+        for index, version_tag in zip(range(5), filtered_tags):
             print(version_tag)
     repo = git.Repo(provenance_path)
 
@@ -43,11 +43,11 @@ def get_version_info(network, environment, provenance_path):
     while version == None:
         try:
             version = input("Enter a release version from above. Run forge -v for full list of versions [{}]:\n".format(
-                filtered_tags[-1]))
+                filtered_tags[0]))
         except ValueError:
             continue
         if not version:
-            version = filtered_tags[-1]
+            version = filtered_tags[0]
         if not version in filtered_tags:
             version = None
 
@@ -58,8 +58,6 @@ def get_version_info(network, environment, provenance_path):
     except git.exc.GitCommandError:
         repo.git.checkout("-f", version)
     return version
-
-# take user input for selecting network
 
 
 def select_network():
@@ -266,7 +264,7 @@ def handle_running_node(process_information):
             node_stopped = True
         elif start_node.lower() == 'n':
             print('Exiting...')
-            exit()
+            return
 
 # Returns a list of version tags for localnet to use
 

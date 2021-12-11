@@ -20,7 +20,7 @@ def main():
             utils.stop_active_node(process_information)
             exit()
         elif input_mode == 4:
-            if process_information['node-running-info']:
+            if process_information and process_information['node-running-info']:
                 utils.handle_running_node(process_information)
             utils.start_node()
             exit()

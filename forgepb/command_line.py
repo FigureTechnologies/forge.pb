@@ -1,10 +1,10 @@
-from cmd.interactive import start_wizard
-from cmd import node_cmd, config_cmd, list_cmd
 import sys
 
 import click
 
 sys.path.insert(1, './forgepb')
+from cmd.interactive import start_wizard
+from cmd import node_cmd, config_cmd, list_cmd
 
 
 @click.group("root")

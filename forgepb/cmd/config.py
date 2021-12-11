@@ -31,13 +31,13 @@ def list_config_cmd(tag, provenance_branch):
     # Retrieve the config information if it exists, else display a message saying that it couldn't be found
     try:
         if tag:
-            if tag not in utils.get_versions(provenance_path):
+            if tag not in utils.get_versions():
                 print(
                     "The version entered doesn't exist in provenance. Please run 'forge -lsv' to list all versions")
             else:
                 print(json.dumps(config['localnet'][tag], indent=4))
         elif provenance_branch:
-            if provenance_branch not in utils.get_remote_branches(provenance_path=provenance_path):
+            if provenance_branch not in utils.get_remote_branches():
                 print(
                     "The version entered doesn't exist in provenance. Please run 'forge -lsv' to list all versions")
             else:
