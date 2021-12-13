@@ -1,12 +1,9 @@
-import os
-import sys
-
-# Development mode.
-if os.getenv("DEBUG"):
-    print("DEBUG is set, injecting '.' into sys.path for local module lookup")
-    sys.path.insert(0, '.')
-
-from forgepb.command_line import start
+from command_line import root_cmd
 
 if __name__ == '__main__':
-    start()
+    try:
+        root_cmd()
+        exit(0)
+    except Exception as e:
+        print(e)
+        exit(1)
