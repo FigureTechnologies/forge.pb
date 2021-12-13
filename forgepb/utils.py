@@ -303,8 +303,12 @@ def take_start_node_input(run_command, version, network, config, log_path):
             builder.spawnDaemon(run_command, version,
                                 network, config, log_path)
         elif start_node.lower() == 'n':
-            config[network][version]['run-command'] = run_command
-            config[network][version]['log-path'] = log_path
+            if network == 'localnet':
+                config[network][version]['run-command'] = run_command
+                config[network][version]['log-path'] = log_path
+            else:
+                config[network]['run-command'] = run_command
+                config[network]['log-path'] = log_path
             save_config(config)
             print(
                 "Exiting. You can run the node using forge or on your own by opening a terminal and running \n{}".format(
