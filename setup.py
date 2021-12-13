@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
@@ -7,7 +7,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="forge.pb",
-    version="1.1.6",
+    version="1.0.0",
     url='https://github.com/provenance-io/forge.pb',
     author='Wyatt Baker',
     author_email='wbaker@figure.com',
