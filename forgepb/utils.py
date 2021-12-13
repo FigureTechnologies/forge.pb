@@ -199,7 +199,7 @@ def view_running_node_info():
         if not process.is_running():
             return None, "cannot locate process"
 
-        return node_information, "running"
+        return node_information, "Node running"
     except Exception:
         return None, "Could not find a running node"
 
