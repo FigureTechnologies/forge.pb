@@ -9,7 +9,7 @@ sys.path.insert(1, './forgepb')
 
 @click.command(
     'tags',
-    help='List '
+    help='List tags that can be checked out to'
 )
 def list_tags_cmd():
     release_versions = utils.get_versions()
@@ -25,3 +25,4 @@ def list_branches_cmd():
     branches = utils.get_remote_branches()
     [print(branch) for branch in branches]
     return
+    

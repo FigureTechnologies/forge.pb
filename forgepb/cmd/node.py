@@ -1,5 +1,6 @@
 import json
 import os
+from sys import version
 import click
 import git
 
@@ -195,3 +196,49 @@ def node_status_cmd():
     else:
         print(message)
     exit()
+
+
+@click.command(
+    'mnemonic',
+    help='List mnemonic for initialized nodes'
+)
+@click.option(
+    "-t",
+    "--tag",
+    "tag",
+    default=None,
+    help="Release tag used to specify the localnet mnemonic to display")
+@click.option(
+    '-b',
+    '--provenance-branch',
+    'provenance_branch',
+    type=click.STRING,
+    help='Provenance branch used to specify the localnet mnemonic to display')
+def list_mnemonic_cmd(tag, provenance_branch):
+    # get config or set location of config to be made
+    if not os.path.exists(global_.CONFIG_PATH + "/config.json"):
+        config = config_handler.set_build_location()
+    else:
+        config = utils.load_config()
+    provenance_path = config['saveDir'] + "forge" + "/provenance"
+    # Retrieve the config information if it exists, else display a message saying that it couldn't be found
+    try:
+        if tag:
+            if tag not in utils.get_versions():
+                print(
+                    "The version entered doesn't exist in provenance. Please run 'forge -lsv' to list all versions")
+            else:
+                print(" ".join(config['localnet'][tag]['mnemonic']))
+        elif provenance_branch:
+            if provenance_branch not in utils.get_remote_branches():
+                print(
+                    "The version entered doesn't exist in provenance. Please run 'forge -lsv' to list all versions")
+            else:
+                print(" ".join([provenance_branch]['mnemonic']))
+        else:
+            for version in config['localnet'].keys():
+                print("Localnet version: {}\nMnemonic: {}".format(version, " ".join(config['localnet'][version]['mnemonic'])))
+    except KeyError:
+        print("No nodes found.")
+    except:
+        print("No nodes have been initialized.")
