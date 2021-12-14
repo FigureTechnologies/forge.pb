@@ -7,11 +7,11 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="forge.pb",
-    version="1.0.0",
+    version="1.1.15",
     url='https://github.com/provenance-io/forge.pb',
     author='Wyatt Baker',
     author_email='wbaker@figure.com',
-    packages=['forgepb'],
+    packages=['forgepb','forgepb.cmd'],
     install_requires = [requirements],
     python_requires='>=3.6',
     entry_points={

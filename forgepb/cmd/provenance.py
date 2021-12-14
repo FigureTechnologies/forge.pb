@@ -1,7 +1,7 @@
 import sys
 import click
 
-import utils
+from forgepb import utils
 
 
 sys.path.insert(1, './forgepb')

@@ -2,10 +2,8 @@ import sys
 
 import click
 
-sys.path.insert(1, './forgepb')
-sys.path.insert(1, './forgepb/cmd')
-import forge
-from cmd import node_cmd, config_cmd, provenance_cmd
+from forgepb import forge, cmd
+# from .cmd import node_cmd, config_cmd, provenance_cmd
 
 
 class CustomMultiCommand(click.Group):
@@ -42,9 +40,9 @@ def start_wizard():
     forge.main()
 
 
-root_cmd.add_command(node_cmd)
-root_cmd.add_command(config_cmd)
-root_cmd.add_command(provenance_cmd)
+root_cmd.add_command(cmd.node_cmd)
+root_cmd.add_command(cmd.config_cmd)
+root_cmd.add_command(cmd.provenance_cmd)
 
 # Point for setup.py to point to for installing
 start = click.CommandCollection(sources=[root_cmd])
