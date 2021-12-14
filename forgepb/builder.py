@@ -228,22 +228,27 @@ def spawnDaemon(node_command, version, network, config, log_path):
 
 
 def start_node(node_command, version, network, config, log_path):
-    log = open(log_path, 'w+')
-    print('Running {}'.format(''.join(node_command)))
-    print('You can view the logs here: {}'.format(log_path))
-    process = subprocess.Popen(
-        node_command, shell=False, stdout=log, stderr=log)
-    if network == 'localnet':
-        config[network][version]['run-command'] = node_command
-        config[network][version]['log-path'] = log_path
-    else:
-        config[network]['run-command'] = node_command
-        config[network]['log-path'] = log_path
-    config['running-node'] = True
-    config['running-node-info'] = {
-        "pid": process.pid,
-        "version": version,
-        "network": network
-    }
-    utils.save_config(config)
-    process.wait()
+    try:
+        log = open(log_path, 'w+')
+        print('Running {}'.format(' '.join(node_command)))
+        print('You can view the logs here: {}'.format(log_path))
+        process = subprocess.Popen(
+            node_command, shell=False, stdout=log, stderr=log)
+        if network == 'localnet':
+            config[network][version]['run-command'] = node_command
+            config[network][version]['log-path'] = log_path
+        else:
+            config[network]['run-command'] = node_command
+            config[network]['log-path'] = log_path
+        config['running-node'] = True
+        config['running-node-info'] = {
+            "pid": process.pid,
+            "version": version,
+            "network": network
+        }
+        utils.save_config(config)
+        process.wait()
+    except FileNotFoundError:
+        print("It looks like a node was initialized and deleted.\nForge is removing this from the config so you can run the same command again and the node will be initialized and started.".format())
+        config.pop(network)
+        utils.save_config(config)
