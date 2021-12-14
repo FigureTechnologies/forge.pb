@@ -36,7 +36,6 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
         version = provenance_branch
         branches = utils.get_remote_branches()
         repo = git.Repo(provenance_path)
-        print(branches)
         try:
             if provenance_branch in branches:
                 repo.git.checkout(provenance_branch)

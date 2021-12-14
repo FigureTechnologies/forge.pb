@@ -1,21 +1,26 @@
-import json
-import os
 import click
 
-from forgepb import config_handler
+from forgepb import config_handler, utils
 
 
 @click.command(
     'save_location',
     help='Change the save location of forge'
 )
-@click.option(
-    '-p',
-    '--path',
+@click.argument(
     'path',
-    type=click.STRING,
-    help='Existing path that forge will save initialized nodes into'
+    type=str,
+    required=False,
 )
 def change_save_loc_cmd(path):
-    config_handler.check_save_location(path)
+    if path is None:
+        if not utils.exists_config():
+            print("save_location=None")
+            return
+
+        cfg = utils.load_config()
+        print(cfg["saveDir"])
+        return
+    else:
+        config_handler.check_save_location(path)
     return

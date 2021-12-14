@@ -12,6 +12,7 @@ def node_cmd(): pass
 @click.group("config")
 def config_cmd(): pass
 
+
 @click.group("provenance", help="Retrieve information on provenance")
 def provenance_cmd(): pass
 

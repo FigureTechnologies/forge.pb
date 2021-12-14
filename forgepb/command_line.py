@@ -1,13 +1,9 @@
-import sys
-
 import click
 
 from forgepb import forge, cmd
-# from .cmd import node_cmd, config_cmd, provenance_cmd
 
 
 class CustomMultiCommand(click.Group):
-
     def command(self, *args, **kwargs):
         """Behaves the same as `click.Group.command()` except if passed
         a list of names, all after the first will be aliases for the first.

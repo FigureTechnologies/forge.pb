@@ -1,4 +1,4 @@
-from command_line import root_cmd
+from forgepb.command_line import root_cmd
 
 if __name__ == '__main__':
     try:
