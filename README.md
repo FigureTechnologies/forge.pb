@@ -15,7 +15,7 @@ pip install forge.pb==1.0.1
 if you want to install a specific version
 
 ## Usage
-In order to execute wizard, run:
+Once installed, you can execute wizard, by running: 
 ```sh
 forge interactive
 ```
