@@ -126,7 +126,7 @@ def collect_args(args):
     while not args_complete:
         try:
             cleveldb = input(
-                "Build environment with C Level DB? Usually not required for local testing. [No]\n")
+                "Build environment with C Level DB? Usually not required for local testing. [No]/yes\n")
             if not cleveldb:
                 args.append("WITH_CLEVELDB=no")
                 args_complete = True

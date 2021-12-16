@@ -1,10 +1,6 @@
-import sys
 import click
 
-import utils
-
-
-sys.path.insert(1, './forgepb')
+from forgepb import utils
 
 
 @click.command(
