@@ -1,5 +1,7 @@
 import json
 import os
+import select
+import subprocess
 
 import git
 import psutil
@@ -181,6 +183,35 @@ def persist_localnet_information(path, config, version, information):
         config['localnet'][version]['validator-information'] = validator_persist
         save_config(config)
 
+# Print last 1000 lines from the log file given
+def print_logs(log_path):
+    list_of_lines = []
+    with open(log_path, 'rb') as read_obj:
+
+        read_obj.seek(0, os.SEEK_END)
+        buffer = bytearray()
+        pointer_location = read_obj.tell()
+        while pointer_location >= 0 and len(list_of_lines) < 1000:
+            read_obj.seek(pointer_location)
+            pointer_location = pointer_location -1
+            new_byte = read_obj.read(1)
+            if new_byte == b'\n':
+                list_of_lines.append(buffer.decode()[::-1])
+                buffer = bytearray()
+            else:
+                buffer.extend(new_byte)
+    [print(line) for line in reversed(list_of_lines)]
+
+# Tail the logs
+def follow_logs(log_path):
+    f = subprocess.Popen(['tail','-F', log_path],\
+            stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    p = select.poll()
+    p.register(f.stdout)
+
+    while True:
+        if p.poll(1):
+            print(f.stdout.readline().decode('utf-8').strip())
 
 # Fetch info stored for currently executing process.
 def view_running_node_info():

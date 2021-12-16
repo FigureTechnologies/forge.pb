@@ -3,6 +3,8 @@ import os
 from sys import version
 import click
 import git
+import subprocess
+import select
 
 from forgepb import utils, builder, config_handler, global_
 
@@ -16,6 +18,37 @@ def node_stop_cmd():
     utils.stop_active_node(process_information)
     return
 
+@click.command(
+    "tail",
+    help="Access the logs of the running node"
+)
+@click.option(
+    '-f',
+    '--follow',
+    'follow',
+    is_flag=True,
+    help='Follow the logs of the currently running node')
+def node_tail_cmd(follow):
+    if not utils.exists_config():
+        print('There is no node running')
+        return
+
+    config = utils.load_config()
+    try:
+        network = config['running-node-info']['network']
+        version = config['running-node-info']['version']
+        if network == 'localnet':
+            log_path = config[network][version]['log-path']
+        else:
+            log_path = config[network]['log-path']
+
+        if not follow:
+            utils.print_logs(log_path)
+        else:
+            utils.follow_logs(log_path)
+
+    except Exception:
+        print('There is no node running')
 
 @click.command(
     "start",
@@ -214,7 +247,7 @@ def node_status_cmd():
     'provenance_branch',
     type=click.STRING,
     help='Provenance branch used to specify the localnet mnemonic to display')
-def list_mnemonic_cmd(tag, provenance_branch):
+def node_list_mnemonic_cmd(tag, provenance_branch):
     # get config or set location of config to be made
     if not os.path.exists(global_.CONFIG_PATH + "/config.json"):
         config = config_handler.set_build_location()
