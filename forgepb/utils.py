@@ -2,6 +2,7 @@ import json
 import os
 import select
 import subprocess
+import time
 
 import git
 import psutil
@@ -196,11 +197,13 @@ def print_logs(log_path):
             pointer_location = pointer_location -1
             new_byte = read_obj.read(1)
             if new_byte == b'\n':
-                list_of_lines.append(buffer.decode()[::-1])
+                list_of_lines.append(buffer.decode('unicode_escape')[::-1])
                 buffer = bytearray()
             else:
                 buffer.extend(new_byte)
-    [print(line) for line in reversed(list_of_lines)]
+    for line in reversed(list_of_lines):
+        print(line)
+        time.sleep(.036)
 
 # Tail the logs
 def follow_logs(log_path):
