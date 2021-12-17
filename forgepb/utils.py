@@ -203,7 +203,7 @@ def print_logs(log_path):
                 buffer.extend(new_byte)
     for line in reversed(list_of_lines):
         print(line)
-        time.sleep(.036)
+        time.sleep(.04)
 
 # Tail the logs
 def follow_logs(log_path):
