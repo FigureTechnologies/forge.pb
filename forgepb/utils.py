@@ -300,27 +300,35 @@ def handle_running_node(process_information):
             print('Exiting...')
             return
 
+
 # Returns a list of version tags for localnet to use
-
-
 def get_versions():
     try:
-        tag_info = requests.get(global_.GITHUB_URL + 'tags').json()
+        res=requests.get(global_.GITHUB_URL + 'tags?simple=yes&per_page=100&page=1')
+        tag_info=res.json()
+        while 'next' in res.links.keys():
+            res=requests.get(res.links['next']['url'])
+            tag_info.extend(res.json())
         return [tag['name'] for tag in tag_info]
     except:
         print("Something went wrong reaching out to {}".format(
             global_.GITHUB_URL + 'branches'))
+        return False
+
 
 # Returns a list of all remote branches
-
-
 def get_remote_branches():
     try:
-        branch_info = requests.get(global_.GITHUB_URL + 'branches').json()
+        res=requests.get(global_.GITHUB_URL + 'branches?simple=yes&per_page=100&page=1')
+        branch_info=res.json()
+        while 'next' in res.links.keys():
+            res=requests.get(res.links['next']['url'])
+            branch_info.extend(res.json())
         return [branch['name'] for branch in branch_info]
     except:
         print("Something went wrong reaching out to {}".format(
             global_.GITHUB_URL + 'branches'))
+        return False
 
 
 def take_start_node_input(run_command, version, network, config, log_path):
