@@ -13,8 +13,8 @@ from forgepb import builder, config_handler, global_
 
 # Pull existing config from file
 def load_config():
-    config_file = open(global_.CONFIG_PATH + "/config.json")
-    return json.load(config_file)
+    with open(global_.CONFIG_PATH + "/config.json") as config_file:
+        return json.load(config_file)
 
 
 def exists_config():
@@ -57,6 +57,9 @@ def get_version_info(network, environment, provenance_path):
     # Checkout to branch for obtaining provenance binary
     # Version should be integer or sanitized
     try:
+        repo.git.reset('--hard')
+        repo.git.checkout('main')
+        repo.remotes.origin.pull()
         repo.git.checkout("-f", "tags/{}".format(version), "-b", version)
     except git.exc.GitCommandError:
         repo.git.checkout("-f", version)
@@ -81,12 +84,12 @@ def select_network():
         except ValueError:
             continue
         if network == len(global_.NETWORK_STRINGS) + 1:
-            exit()
+            return
         if network > len(global_.NETWORK_STRINGS) or network < 1:
             continue
         builder.build(global_.CHAIN_ID_STRINGS[global_.NETWORK_STRINGS[network - 1]],
                       global_.NETWORK_STRINGS[network - 1], config)
-        exit()
+        return
 
 
 # Collect moniker and chain id for a localnet node
@@ -184,6 +187,7 @@ def persist_localnet_information(path, config, version, information):
         config['localnet'][version]['validator-information'] = validator_persist
         save_config(config)
 
+
 # Print last 1000 lines from the log file given
 def print_logs(log_path):
     list_of_lines = []
@@ -194,27 +198,31 @@ def print_logs(log_path):
         pointer_location = read_obj.tell()
         while pointer_location >= 0 and len(list_of_lines) < 1000:
             read_obj.seek(pointer_location)
-            pointer_location = pointer_location -1
+            pointer_location = pointer_location - 1
             new_byte = read_obj.read(1)
             if new_byte == b'\n':
                 list_of_lines.append(buffer.decode('unicode_escape')[::-1])
                 buffer = bytearray()
             else:
                 buffer.extend(new_byte)
+        if len(buffer) > 0:
+            list_of_lines.append(buffer.decode()[::-1])
     for line in reversed(list_of_lines):
         print(line)
         time.sleep(.04)
 
+
 # Tail the logs
 def follow_logs(log_path):
-    f = subprocess.Popen(['tail','-F', log_path],\
-            stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    f = subprocess.Popen(['tail', '-F', log_path],
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     p = select.poll()
     p.register(f.stdout)
 
     while True:
         if p.poll(1):
             print(f.stdout.readline().decode('utf-8').strip())
+
 
 # Fetch info stored for currently executing process.
 def view_running_node_info():
@@ -284,7 +292,7 @@ def start_node():
         builder.spawnDaemon(
             node_info['run-command'], version, network, config, node_info['log-path'])
     except Exception:
-        print("You haven't initialized a node. Try running 'forge' to start the wizard.")
+        print("You haven't initialized a node. Try running 'forge i' to start the wizard.")
 
 
 def handle_running_node(process_information):
@@ -304,10 +312,11 @@ def handle_running_node(process_information):
 # Returns a list of version tags for localnet to use
 def get_versions():
     try:
-        res=requests.get(global_.GITHUB_URL + 'tags?simple=yes&per_page=100&page=1')
-        tag_info=res.json()
+        res = requests.get(global_.GITHUB_URL +
+                           'tags?simple=yes&per_page=100&page=1')
+        tag_info = res.json()
         while 'next' in res.links.keys():
-            res=requests.get(res.links['next']['url'])
+            res = requests.get(res.links['next']['url'])
             tag_info.extend(res.json())
         return [tag['name'] for tag in tag_info]
     except:
@@ -319,10 +328,11 @@ def get_versions():
 # Returns a list of all remote branches
 def get_remote_branches():
     try:
-        res=requests.get(global_.GITHUB_URL + 'branches?simple=yes&per_page=100&page=1')
-        branch_info=res.json()
+        res = requests.get(global_.GITHUB_URL +
+                           'branches?simple=yes&per_page=100&page=1')
+        branch_info = res.json()
         while 'next' in res.links.keys():
-            res=requests.get(res.links['next']['url'])
+            res = requests.get(res.links['next']['url'])
             branch_info.extend(res.json())
         return [branch['name'] for branch in branch_info]
     except:
