@@ -25,6 +25,15 @@ forge interactive
 
 * The repo would then checkout to the release version and the binaries would be built, genesis file downloaded/constructed, and a command to run the node would be output to the console.
 
+### Optional
+
+Forge uses the GitHub Api to pull information about the provenance repo for you to use when spinning up a node. If you use forge a lot in a short time, you could hit the 60 calls per hour limit. You can add a GitHub Api Token to your environment in order to increase this to 5000 calls per hour.
+
+You can follow the instructions [Here](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) to setup a personal access token.
+Once that is complete, add the token generated to your environment:
+```sh
+GITHUB_API_TOKEN=token_value
+```
 
 ### Forge comes with command line tools that can speed up the process.
 

@@ -311,33 +311,53 @@ def handle_running_node(process_information):
 
 # Returns a list of version tags for localnet to use
 def get_versions():
+    github_api_token = os.getenv('GITHUB_API_TOKEN')
+    if not github_api_token == None:
+        headers = {'Authorization': 'token ' + github_api_token}
+    else:
+        headers = {}
     try:
         res = requests.get(global_.GITHUB_URL +
-                           'tags?simple=yes&per_page=100&page=1')
+                           'tags?simple=yes&per_page=100&page=1', headers=headers)
         tag_info = res.json()
         while 'next' in res.links.keys():
             res = requests.get(res.links['next']['url'])
             tag_info.extend(res.json())
         return [tag['name'] for tag in tag_info]
     except:
-        print("Something went wrong reaching out to {}".format(
-            global_.GITHUB_URL + 'branches'))
+        if github_api_token == None:
+            print("Something went wrong reaching out to {}\nTry adding GITHUB_API_TOKEN to your environment to increase number of times you can call the github api.".format(
+                global_.GITHUB_URL + 'tags'))
+        
+        else:
+            print("Something went wrong reaching out to {}\nYou may be out of api requests which is limited to 5000 per hour".format(
+                global_.GITHUB_URL + 'tags'))
         return False
 
 
 # Returns a list of all remote branches
 def get_remote_branches():
+    github_api_token = os.getenv('GITHUB_API_TOKEN')
+    if not github_api_token == None:
+        headers = {'Authorization': 'token ' + github_api_token}
+    else:
+        headers = {}
     try:
         res = requests.get(global_.GITHUB_URL +
-                           'branches?simple=yes&per_page=100&page=1')
+                           'branches?simple=yes&per_page=100&page=1', headers=headers)
         branch_info = res.json()
         while 'next' in res.links.keys():
             res = requests.get(res.links['next']['url'])
             branch_info.extend(res.json())
         return [branch['name'] for branch in branch_info]
     except:
-        print("Something went wrong reaching out to {}".format(
-            global_.GITHUB_URL + 'branches'))
+        if github_api_token == None:
+            print("Something went wrong reaching out to {}\nTry adding GITHUB_API_TOKEN to your environment to increase number of times you can call the github api.".format(
+                global_.GITHUB_URL + 'branches'))
+        
+        else:
+            print("Something went wrong reaching out to {}\nYou may be out of api requests which is limited to 5000 per hour".format(
+                global_.GITHUB_URL + 'branches'))
         return False
 
 
