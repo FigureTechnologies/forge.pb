@@ -16,6 +16,10 @@ import shutil
 
 class TestUtils(unittest.TestCase):
 
+    @classmethod
+    def tearDownClass(cls):
+        test_utils.clear_saves()
+
     @patch('builtins.input', lambda *args: 'v1.7.5')
     def test_get_version_info_localnet(self):
         if not os.path.exists(os.path.expanduser('~') + "/forge" + "/provenance"):
