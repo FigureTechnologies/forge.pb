@@ -88,7 +88,7 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
         utils.persist_localnet_information(
             build_path, config, version, validator_info)
 
-        run_command = "{}/bin/provenanced start --home {}".format(
+        run_command = "{}/bin/provenanced start --home {} -t".format(
             build_path, build_path).split(" ")
         log_path = '{}/logs/{}.txt'.format(build_path,
                                            str(datetime.datetime.now()).replace(' ', '-'))
@@ -170,27 +170,27 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
 
 
 def populate_genesis(build_path, moniker, chain_id):
-    command1 = "{}/bin/provenanced --home {} init {} --chain-id {};".format(
+    command1 = "{}/bin/provenanced --home {} -t init {} --chain-id {};".format(
         build_path, build_path, moniker, chain_id)
-    command2 = "{}/bin/provenanced --home {} keys add validator --keyring-backend test 2>&1;".format(
+    command2 = "{}/bin/provenanced --home {} -t keys add validator --keyring-backend test 2>&1;".format(
         build_path, build_path, build_path)
-    command3 = "{}/bin/provenanced --home {} add-genesis-root-name validator pio --keyring-backend test 2>&- || echo pio root name already exists, skipping...;".format(
+    command3 = "{}/bin/provenanced --home {} -t add-genesis-root-name validator pio --keyring-backend test 2>&- || echo pio root name already exists, skipping...;".format(
         build_path, build_path)
-    command3 += "{}/bin/provenanced --home {} add-genesis-root-name validator pb --restrict=false --keyring-backend test 2>&- || echo pb root name already exists, skipping...;".format(
+    command3 += "{}/bin/provenanced --home {} -t add-genesis-root-name validator pb --restrict=false --keyring-backend test 2>&- || echo pb root name already exists, skipping...;".format(
         build_path, build_path)
-    command3 += "{}/bin/provenanced --home {} add-genesis-root-name validator io --restrict --keyring-backend test 2>&- || echo io root name already exists, skipping...;".format(
+    command3 += "{}/bin/provenanced --home {} -t add-genesis-root-name validator io --restrict --keyring-backend test 2>&- || echo io root name already exists, skipping...;".format(
         build_path, build_path)
-    command3 += "{}/bin/provenanced --home {} add-genesis-root-name validator provenance --keyring-backend test 2>&- || echo validator root name already exists, skipping...;".format(
+    command3 += "{}/bin/provenanced --home {} -t add-genesis-root-name validator provenance --keyring-backend test 2>&- || echo validator root name already exists, skipping...;".format(
         build_path, build_path)
-    command3 += "{}/bin/provenanced --home {} add-genesis-account validator 100000000000000000000nhash --keyring-backend test 2>&-;".format(
+    command3 += "{}/bin/provenanced --home {} -t add-genesis-account validator 100000000000000000000nhash --keyring-backend test 2>&-;".format(
         build_path, build_path)
-    command3 += "{}/bin/provenanced --home {} gentx validator 1000000000000000nhash --keyring-backend test --chain-id={} 2>&- || echo gentx file already exists, skipping;".format(
+    command3 += "{}/bin/provenanced --home {} -t gentx validator 1000000000000000nhash --keyring-backend test --chain-id={} 2>&- || echo gentx file already exists, skipping;".format(
         build_path, build_path, chain_id)
-    command3 += "{}/bin/provenanced --home {} add-genesis-marker 100000000000000000000nhash --manager validator --access mint,burn,admin,withdraw,deposit --activate --keyring-backend test 2>&- || echo existing address, skipping;".format(
+    command3 += "{}/bin/provenanced --home {} -t add-genesis-marker 100000000000000000000nhash --manager validator --access mint,burn,admin,withdraw,deposit --activate --keyring-backend test 2>&- || echo existing address, skipping;".format(
         build_path, build_path)
-    command3 += "{}/bin/provenanced --home {} collect-gentxs".format(
+    command3 += "{}/bin/provenanced --home {} -t collect-gentxs".format(
         build_path, build_path)
-    validator_check_command = "{}/bin/provenanced --home {} keys show validator".format(
+    validator_check_command = "{}/bin/provenanced --home {} -t keys show validator".format(
         build_path, build_path)
     os.system(command1)
     validator_check_process = subprocess.Popen(
