@@ -38,6 +38,7 @@ def get_version_info(network, environment, provenance_path):
 
     if network == 'localnet':
         filtered_tags = get_versions()
+        branches = get_remote_branches()
         for index, version_tag in zip(range(5), filtered_tags):
             print(version_tag)
     repo = git.Repo(provenance_path)
@@ -45,13 +46,13 @@ def get_version_info(network, environment, provenance_path):
     # In case of localnet, list release versions for user to select
     while version == None:
         try:
-            version = input("Enter a release version from above. Run forge -v for full list of versions [{}]:\n".format(
+            version = input("Enter a release version from above or a proveance branch. Run 'forge provenance tags' for full list of versions or 'forge provenance branches' for a full list of branches [{}]:\n".format(
                 filtered_tags[0]))
         except ValueError:
             continue
         if not version:
             version = filtered_tags[0]
-        if not version in filtered_tags:
+        if not version in filtered_tags and not version in branches:
             version = None
 
     # Checkout to branch for obtaining provenance binary

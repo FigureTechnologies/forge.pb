@@ -22,7 +22,7 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
     elif not provenance_branch and version:
         if version and version not in utils.get_versions():
             print(
-                "The version entered doesn't exist in provenance. Please run 'forge -lsv' to list all versions")
+                "The version entered doesn't exist in provenance. Please run 'forge provenance tags' to list all versions")
             return
         repo = git.Repo(provenance_path)
         repo.git.reset('--hard')
