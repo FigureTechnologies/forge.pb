@@ -22,7 +22,7 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
     elif not provenance_branch and version:
         if version and version not in utils.get_versions():
             print(
-                "The version entered doesn't exist in provenance. Please run 'forge -lsv' to list all versions")
+                "The version entered doesn't exist in provenance. Please run 'forge provenance tags' to list all versions")
             return
         repo = git.Repo(provenance_path)
         repo.git.reset('--hard')
@@ -88,7 +88,7 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
         utils.persist_localnet_information(
             build_path, config, version, validator_info)
 
-        run_command = "{}/bin/provenanced start --home {}".format(
+        run_command = "{}/bin/provenanced start --home {} -t".format(
             build_path, build_path).split(" ")
         log_path = '{}/logs/{}.txt'.format(build_path,
                                            str(datetime.datetime.now()).replace(' ', '-'))
@@ -170,27 +170,27 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
 
 
 def populate_genesis(build_path, moniker, chain_id):
-    command1 = "{}/bin/provenanced --home {} init {} --chain-id {};".format(
+    command1 = "{}/bin/provenanced --home {} -t init {} --chain-id {};".format(
         build_path, build_path, moniker, chain_id)
-    command2 = "{}/bin/provenanced --home {} keys add validator --keyring-backend test 2>&1;".format(
+    command2 = "{}/bin/provenanced --home {} -t keys add validator --keyring-backend test 2>&1;".format(
         build_path, build_path, build_path)
-    command3 = "{}/bin/provenanced --home {} add-genesis-root-name validator pio --keyring-backend test 2>&- || echo pio root name already exists, skipping...;".format(
+    command3 = "{}/bin/provenanced --home {} -t add-genesis-root-name validator pio --keyring-backend test 2>&- || echo pio root name already exists, skipping...;".format(
         build_path, build_path)
-    command3 += "{}/bin/provenanced --home {} add-genesis-root-name validator pb --restrict=false --keyring-backend test 2>&- || echo pb root name already exists, skipping...;".format(
+    command3 += "{}/bin/provenanced --home {} -t add-genesis-root-name validator pb --restrict=false --keyring-backend test 2>&- || echo pb root name already exists, skipping...;".format(
         build_path, build_path)
-    command3 += "{}/bin/provenanced --home {} add-genesis-root-name validator io --restrict --keyring-backend test 2>&- || echo io root name already exists, skipping...;".format(
+    command3 += "{}/bin/provenanced --home {} -t add-genesis-root-name validator io --restrict --keyring-backend test 2>&- || echo io root name already exists, skipping...;".format(
         build_path, build_path)
-    command3 += "{}/bin/provenanced --home {} add-genesis-root-name validator provenance --keyring-backend test 2>&- || echo validator root name already exists, skipping...;".format(
+    command3 += "{}/bin/provenanced --home {} -t add-genesis-root-name validator provenance --keyring-backend test 2>&- || echo validator root name already exists, skipping...;".format(
         build_path, build_path)
-    command3 += "{}/bin/provenanced --home {} add-genesis-account validator 100000000000000000000nhash --keyring-backend test 2>&-;".format(
+    command3 += "{}/bin/provenanced --home {} -t add-genesis-account validator 100000000000000000000nhash --keyring-backend test 2>&-;".format(
         build_path, build_path)
-    command3 += "{}/bin/provenanced --home {} gentx validator 1000000000000000nhash --keyring-backend test --chain-id={} 2>&- || echo gentx file already exists, skipping;".format(
+    command3 += "{}/bin/provenanced --home {} -t gentx validator 1000000000000000nhash --keyring-backend test --chain-id={} 2>&- || echo gentx file already exists, skipping;".format(
         build_path, build_path, chain_id)
-    command3 += "{}/bin/provenanced --home {} add-genesis-marker 100000000000000000000nhash --manager validator --access mint,burn,admin,withdraw,deposit --activate --keyring-backend test 2>&- || echo existing address, skipping;".format(
+    command3 += "{}/bin/provenanced --home {} -t add-genesis-marker 100000000000000000000nhash --manager validator --access mint,burn,admin,withdraw,deposit --activate --keyring-backend test 2>&- || echo existing address, skipping;".format(
         build_path, build_path)
-    command3 += "{}/bin/provenanced --home {} collect-gentxs".format(
+    command3 += "{}/bin/provenanced --home {} -t collect-gentxs".format(
         build_path, build_path)
-    validator_check_command = "{}/bin/provenanced --home {} keys show validator".format(
+    validator_check_command = "{}/bin/provenanced --home {} -t keys show validator".format(
         build_path, build_path)
     os.system(command1)
     validator_check_process = subprocess.Popen(
@@ -231,25 +231,25 @@ def spawnDaemon(node_command, version, network, config, log_path):
 
 def start_node(node_command, version, network, config, log_path):
     try:
-        log = open(log_path, 'w+')
-        print('Running {}'.format(' '.join(node_command)))
-        print('You can view the logs here: {}'.format(log_path))
-        process = subprocess.Popen(
-            node_command, shell=False, stdout=log, stderr=log)
-        if network == 'localnet':
-            config[network][version]['run-command'] = node_command
-            config[network][version]['log-path'] = log_path
-        else:
-            config[network]['run-command'] = node_command
-            config[network]['log-path'] = log_path
-        config['running-node'] = True
-        config['running-node-info'] = {
-            "pid": process.pid,
-            "version": version,
-            "network": network
-        }
-        utils.save_config(config)
-        process.wait()
+        with open(log_path, 'w+') as log:
+            print('Running {}'.format(' '.join(node_command)))
+            print('You can view the logs here: {}'.format(log_path))
+            process = subprocess.Popen(
+                node_command, shell=False, stdout=log, stderr=log)
+            if network == 'localnet':
+                config[network][version]['run-command'] = node_command
+                config[network][version]['log-path'] = log_path
+            else:
+                config[network]['run-command'] = node_command
+                config[network]['log-path'] = log_path
+            config['running-node'] = True
+            config['running-node-info'] = {
+                "pid": process.pid,
+                "version": version,
+                "network": network
+            }
+            utils.save_config(config)
+            process.wait()
     except FileNotFoundError:
         print("It looks like a node was initialized and deleted.\nForge is removing this from the config so you can run the same command again and the node will be initialized and started.".format())
         config.pop(network)

@@ -20,6 +20,7 @@ setup(
         ]
     },
     keyword="provenance, node, bootstrap",
+    description="Node manager for the Provenance Blockchain",
     long_description=long_description,
     long_description_content_type="text/markdown",
 )

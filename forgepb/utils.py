@@ -13,8 +13,8 @@ from forgepb import builder, config_handler, global_
 
 # Pull existing config from file
 def load_config():
-    config_file = open(global_.CONFIG_PATH + "/config.json")
-    return json.load(config_file)
+    with open(global_.CONFIG_PATH + "/config.json") as config_file:
+        return json.load(config_file)
 
 
 def exists_config():
@@ -38,6 +38,7 @@ def get_version_info(network, environment, provenance_path):
 
     if network == 'localnet':
         filtered_tags = get_versions()
+        branches = get_remote_branches()
         for index, version_tag in zip(range(5), filtered_tags):
             print(version_tag)
     repo = git.Repo(provenance_path)
@@ -45,18 +46,21 @@ def get_version_info(network, environment, provenance_path):
     # In case of localnet, list release versions for user to select
     while version == None:
         try:
-            version = input("Enter a release version from above. Run forge -v for full list of versions [{}]:\n".format(
+            version = input("Enter a release version from above or a proveance branch. Run 'forge provenance tags' for full list of versions or 'forge provenance branches' for a full list of branches [{}]:\n".format(
                 filtered_tags[0]))
         except ValueError:
             continue
         if not version:
             version = filtered_tags[0]
-        if not version in filtered_tags:
+        if not version in filtered_tags and not version in branches:
             version = None
 
     # Checkout to branch for obtaining provenance binary
     # Version should be integer or sanitized
     try:
+        repo.git.reset('--hard')
+        repo.git.checkout('main')
+        repo.remotes.origin.pull()
         repo.git.checkout("-f", "tags/{}".format(version), "-b", version)
     except git.exc.GitCommandError:
         repo.git.checkout("-f", version)
@@ -81,12 +85,12 @@ def select_network():
         except ValueError:
             continue
         if network == len(global_.NETWORK_STRINGS) + 1:
-            exit()
+            return
         if network > len(global_.NETWORK_STRINGS) or network < 1:
             continue
         builder.build(global_.CHAIN_ID_STRINGS[global_.NETWORK_STRINGS[network - 1]],
                       global_.NETWORK_STRINGS[network - 1], config)
-        exit()
+        return
 
 
 # Collect moniker and chain id for a localnet node
@@ -216,6 +220,42 @@ def follow_logs(log_path):
         if p.poll(1):
             print(f.stdout.readline().decode('utf-8').strip())
 
+# Print last 1000 lines from the log file given
+def print_logs(log_path):
+    list_of_lines = []
+    with open(log_path, 'rb') as read_obj:
+
+        read_obj.seek(0, os.SEEK_END)
+        buffer = bytearray()
+        pointer_location = read_obj.tell()
+        while pointer_location >= 0 and len(list_of_lines) < 1000:
+            read_obj.seek(pointer_location)
+            pointer_location = pointer_location - 1
+            new_byte = read_obj.read(1)
+            if new_byte == b'\n':
+                list_of_lines.append(buffer.decode('unicode_escape')[::-1])
+                buffer = bytearray()
+            else:
+                buffer.extend(new_byte)
+        if len(buffer) > 0:
+            list_of_lines.append(buffer.decode()[::-1])
+    for line in reversed(list_of_lines):
+        print(line)
+        time.sleep(.04)
+
+
+# Tail the logs
+def follow_logs(log_path):
+    f = subprocess.Popen(['tail', '-F', log_path],
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = select.poll()
+    p.register(f.stdout)
+
+    while True:
+        if p.poll(1):
+            print(f.stdout.readline().decode('utf-8').strip())
+
+
 # Fetch info stored for currently executing process.
 def view_running_node_info():
     if not exists_config():
@@ -284,7 +324,7 @@ def start_node():
         builder.spawnDaemon(
             node_info['run-command'], version, network, config, node_info['log-path'])
     except Exception:
-        print("You haven't initialized a node. Try running 'forge' to start the wizard.")
+        print("You haven't initialized a node. Try running 'forge i' to start the wizard.")
 
 
 def handle_running_node(process_information):
@@ -303,31 +343,53 @@ def handle_running_node(process_information):
 
 # Returns a list of version tags for localnet to use
 def get_versions():
+    github_api_token = os.getenv('GITHUB_API_TOKEN')
+    if not github_api_token == None:
+        headers = {'Authorization': 'token ' + github_api_token}
+    else:
+        headers = {}
     try:
-        res=requests.get(global_.GITHUB_URL + 'tags?simple=yes&per_page=100&page=1')
-        tag_info=res.json()
+        res = requests.get(global_.GITHUB_URL +
+                           'tags?simple=yes&per_page=100&page=1', headers=headers)
+        tag_info = res.json()
         while 'next' in res.links.keys():
-            res=requests.get(res.links['next']['url'])
+            res = requests.get(res.links['next']['url'])
             tag_info.extend(res.json())
         return [tag['name'] for tag in tag_info]
     except:
-        print("Something went wrong reaching out to {}".format(
-            global_.GITHUB_URL + 'branches'))
+        if github_api_token == None:
+            print("Something went wrong reaching out to {}\nTry adding GITHUB_API_TOKEN to your environment to increase number of times you can call the github api.".format(
+                global_.GITHUB_URL + 'tags'))
+        
+        else:
+            print("Something went wrong reaching out to {}\nYou may be out of api requests which is limited to 5000 per hour".format(
+                global_.GITHUB_URL + 'tags'))
         return False
 
 
 # Returns a list of all remote branches
 def get_remote_branches():
+    github_api_token = os.getenv('GITHUB_API_TOKEN')
+    if not github_api_token == None:
+        headers = {'Authorization': 'token ' + github_api_token}
+    else:
+        headers = {}
     try:
-        res=requests.get(global_.GITHUB_URL + 'branches?simple=yes&per_page=100&page=1')
-        branch_info=res.json()
+        res = requests.get(global_.GITHUB_URL +
+                           'branches?simple=yes&per_page=100&page=1', headers=headers)
+        branch_info = res.json()
         while 'next' in res.links.keys():
-            res=requests.get(res.links['next']['url'])
+            res = requests.get(res.links['next']['url'])
             branch_info.extend(res.json())
         return [branch['name'] for branch in branch_info]
     except:
-        print("Something went wrong reaching out to {}".format(
-            global_.GITHUB_URL + 'branches'))
+        if github_api_token == None:
+            print("Something went wrong reaching out to {}\nTry adding GITHUB_API_TOKEN to your environment to increase number of times you can call the github api.".format(
+                global_.GITHUB_URL + 'branches'))
+        
+        else:
+            print("Something went wrong reaching out to {}\nYou may be out of api requests which is limited to 5000 per hour".format(
+                global_.GITHUB_URL + 'branches'))
         return False
 
 

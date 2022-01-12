@@ -195,7 +195,8 @@ def node_init_cmd(network, tag, moniker, chain_id, provenance_branch, boot_args)
             os.path.expanduser('~'))['config']
         provenance_path = config['saveDir'] + "forge" + "/provenance"
         print("Cloning repo, this can take a few seconds...")
-        git.Repo.clone_from(global_.PROVENANCE_REPO, provenance_path)
+        if not os.path.exists(provenance_path):
+            git.Repo.clone_from(global_.PROVENANCE_REPO, provenance_path)
     if not tag and not provenance_branch and not network:
         provenance_branch = 'main'
     if not moniker:
@@ -228,8 +229,7 @@ def node_status_cmd():
         print(json.dumps(node_status, indent=4))
     else:
         print(message)
-    exit()
-
+    return
 
 @click.command(
     'mnemonic',
@@ -259,15 +259,15 @@ def node_list_mnemonic_cmd(tag, provenance_branch):
         if tag:
             if tag not in utils.get_versions():
                 print(
-                    "The version entered doesn't exist in provenance. Please run 'forge -lsv' to list all versions")
+                    "The tag entered doesn't exist in provenance. Please run 'forge provenance tags' to list all tags")
             else:
                 print(" ".join(config['localnet'][tag]['mnemonic']))
         elif provenance_branch:
             if provenance_branch not in utils.get_remote_branches():
                 print(
-                    "The version entered doesn't exist in provenance. Please run 'forge -lsv' to list all versions")
+                    "The branch entered doesn't exist in provenance. Please run 'forge provenance branches' to list all branches")
             else:
-                print(" ".join([provenance_branch]['mnemonic']))
+                print(" ".join(config['localnet'][provenance_branch]['mnemonic']))
         else:
             for version in config['localnet'].keys():
                 print("Localnet version: {}\nMnemonic: {}".format(version, " ".join(config['localnet'][version]['mnemonic'])))
