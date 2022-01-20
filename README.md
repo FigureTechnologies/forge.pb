@@ -10,7 +10,7 @@ pip install forge.pb
 ```
 or
 ```
-pip install forge.pb==1.0.1
+pip install forge.pb==1.0.2
 ```
 if you want to install a specific version
 
