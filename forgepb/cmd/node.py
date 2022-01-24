@@ -1,6 +1,7 @@
 import json
 import os
 from sys import version
+from typing_extensions import Required
 import click
 import git
 import subprocess
@@ -8,6 +9,21 @@ import select
 
 from forgepb import utils, builder, config_handler, global_
 
+
+# Require network flag when -ba is given
+def command_required_option_from_option(require_name):
+
+    class CommandOptionRequiredClass(click.Command):
+
+        def invoke(self, ctx):
+            require = ctx.params[require_name]
+            if ctx.params[global_.COMMAND_REQUIRE_MAP[require_name].lower()] is None and ctx.params[require_name]:
+                raise click.ClickException(
+                    "With {}={} must specify option --{}".format(
+                        require_name, require, global_.COMMAND_REQUIRE_MAP[require_name]))
+            super(CommandOptionRequiredClass, self).invoke(ctx)
+
+    return CommandOptionRequiredClass
 
 @click.command(
     "stop",
@@ -52,7 +68,9 @@ def node_tail_cmd(follow):
 
 @click.command(
     "start",
-    help="Start a provenance node with default values")
+    help="Start a provenance node with default values",
+    cls=command_required_option_from_option('skip_build')
+)
 @click.option(
     "-n",
     "--network",
@@ -93,7 +111,13 @@ def node_tail_cmd(follow):
     multiple=True,
     default=[],
     help='List of args for building the provenance binary. Requires "--network" tag')
-def node_start_cmd(network, tag, moniker, chain_id, provenance_branch, boot_args):
+@click.option(
+    '--no-build',
+    'skip_build',
+    is_flag=True,
+    default=False,
+    help='Skip building binary on local machine. Downloads from github repo instead. Requires --tag arg to be given for binary download. --network can be given to specify mainnet/testnet for genesis download.')
+def node_start_cmd(network, tag, moniker, chain_id, provenance_branch, boot_args, skip_build):
     process_information, _ = utils.view_running_node_info()
     if process_information:
         utils.stop_active_node(process_information)
@@ -138,7 +162,7 @@ def node_start_cmd(network, tag, moniker, chain_id, provenance_branch, boot_args
                 node_info['run-command'], tag, network, config, node_info['log-path'])
     except KeyError:
         builder.build(global_.CHAIN_ID_STRINGS[network], network, config, provenance_branch, tag, list(
-            boot_args), moniker, chain_id, start_node=True)
+            boot_args), moniker, chain_id, start_node=True, skip_build=skip_build)
     return
 
 

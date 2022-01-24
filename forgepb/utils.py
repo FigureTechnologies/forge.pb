@@ -3,6 +3,9 @@ import os
 import select
 import subprocess
 import time
+import zipfile
+import io
+import platform
 
 import git
 import psutil
@@ -92,6 +95,16 @@ def select_network():
                       global_.NETWORK_STRINGS[network - 1], config)
         return
 
+def download_resources(network, bin_path, version = None):
+    if not version:
+        release_tag = requests.get(global_.GENESIS_VERSION_TXT_URL.format(network, global_.CHAIN_ID_STRINGS[network]))
+        if release_tag.status_code != 200:
+            version = None
+        else:
+            version = release_tag.text.strip('\n')
+    r = requests.get(global_.BINARY_URL.format(version, platform.system().lower(), version))
+    z = zipfile.ZipFile(io.BytesIO(r.content))
+    z.extractall(bin_path)
 
 # Collect moniker and chain id for a localnet node
 def collect_moniker_chain_id(version, config):
