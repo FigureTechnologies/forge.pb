@@ -1,7 +1,5 @@
 import json
 import os
-from sys import version
-from typing_extensions import Required
 import click
 import git
 import subprocess
@@ -168,7 +166,8 @@ def node_start_cmd(network, tag, moniker, chain_id, provenance_branch, boot_args
 
 @click.command(
     "init",
-    help="Initialize a new node"
+    help="Initialize a new node",
+    cls=command_required_option_from_option('skip_build')
 )
 @click.option(
     "-n",
@@ -210,7 +209,13 @@ def node_start_cmd(network, tag, moniker, chain_id, provenance_branch, boot_args
     multiple=True,
     default=[],
     help='List of args for building the provenance binary. Requires "--network" tag')
-def node_init_cmd(network, tag, moniker, chain_id, provenance_branch, boot_args):
+@click.option(
+    '--no-build',
+    'skip_build',
+    is_flag=True,
+    default=False,
+    help='Skip building binary on local machine. Downloads from github repo instead. Requires --tag arg to be given for binary download. --network can be given to specify mainnet/testnet for genesis download.')
+def node_init_cmd(network, tag, moniker, chain_id, provenance_branch, boot_args, skip_build):
     try:
         config = utils.load_config()
         provenance_path = config['saveDir'] + "forge" + "/provenance"
@@ -239,7 +244,7 @@ def node_init_cmd(network, tag, moniker, chain_id, provenance_branch, boot_args)
         boot_args = ['WITH_CLEVELDB=no']
 
     builder.build(global_.CHAIN_ID_STRINGS[network], network, config, provenance_branch, tag, list(
-        boot_args), moniker, chain_id, start_node=False)
+        boot_args), moniker, chain_id, start_node=False, skip_build=skip_build)
     return
 
 
