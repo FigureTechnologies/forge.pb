@@ -21,7 +21,7 @@ jobs:
 
       - name: Install setuptools
         run: |
-          python3 -m pip install --upgrade setuptools wheel
+          python3 -m pip install --upgrade setuptools wheel twine
 
       - name: Install dependencies
         run: |
