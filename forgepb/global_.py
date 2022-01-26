@@ -13,8 +13,9 @@ GENESIS_VERSION_TXT_URL = "https://raw.githubusercontent.com/provenance-io/{}/ma
 GENESIS_JSON_URL = "https://raw.githubusercontent.com/provenance-io/{}/main/{}/genesis.json"
 PROVENANCE_REPO = "https://github.com/provenance-io/provenance.git"
 CONFIG_PATH = os.path.join(os.path.expanduser('~'), ".pio")
-COMMAND_REQUIRE_MAP = {'boot_args': 'network'}
+COMMAND_REQUIRE_MAP = {'boot_args': 'network', 'skip_build': 'tag'}
 GITHUB_URL = "https://api.github.com/repos/provenance-io/provenance/"
+BINARY_URL = "https://github.com/provenance-io/provenance/releases/download/{}/provenance-{}-amd64-{}.zip"
 
 FORGE = '''
 __________________________________________

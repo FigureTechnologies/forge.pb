@@ -10,7 +10,7 @@ from forgepb import utils, global_
 
 
 # Build a node in the given environment and network
-def build(environment, network, config, provenance_branch=None, version=None, args=[], moniker=None, chain_id=None, start_node=None):
+def build(environment, network, config, provenance_branch=None, version=None, args=[], moniker=None, chain_id=None, start_node=None, skip_build=False):
     root_path = config['saveDir'] + "forge"
     provenance_path = config['saveDir'] + "forge" + "/provenance"
     if not os.path.exists(provenance_path):
@@ -49,9 +49,9 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
             repo.git.checkout("-f", provenance_branch)
     # Construct binary for provenance
     args = utils.collect_args(args)
-
-    os.system("make -C {} install {}".format(provenance_path, " ".join(args)))
-    go_path = os.path.join(os.path.expanduser('~'), "go", "bin", "provenanced")
+    if(not skip_build):
+        os.system("make -C {} install {}".format(provenance_path, " ".join(args)))
+        go_path = os.path.join(os.path.expanduser('~'), "go", "bin", "provenanced")
 
     # Handle Localnet node construction
     if network == "localnet":
@@ -62,7 +62,14 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
             os.makedirs(build_path + "/bin")
         if not os.path.exists(build_path + "/logs"):
             os.makedirs(build_path + "/logs")
-        copyfile(go_path, "{}/bin/provenanced".format(build_path))
+        if(not skip_build):
+            copyfile(go_path, "{}/bin/provenanced".format(build_path))
+        else:
+            try:
+                utils.download_resources(network, build_path, version)
+            except Exception as e:
+                print('An error occured when downloading the binary, it may not exist in the repo for your OS yet')
+                return
         st = os.stat(build_path + "/bin/provenanced")
         os.chmod(build_path + "/bin/provenanced", st.st_mode | stat.S_IEXEC)
 
@@ -114,7 +121,14 @@ def build(environment, network, config, provenance_branch=None, version=None, ar
             os.makedirs(build_path + "/logs")
 
         # move binary to correct location
-        copyfile(go_path, build_path + "/bin/provenanced")
+        if(not skip_build):
+            copyfile(go_path, build_path + "/bin/provenanced")
+        else:
+            try:
+                utils.download_resources(network, build_path)
+            except Exception as e:
+                print('An error occured when downloading the binary, it may not exist in the repo for your OS yet')
+                return
         st = os.stat(build_path + "/bin/provenanced")
         os.chmod(build_path + "/bin/provenanced", st.st_mode | stat.S_IEXEC)
 
