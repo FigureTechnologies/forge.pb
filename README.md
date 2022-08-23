@@ -4,7 +4,7 @@
 The Provenance Blockchain Manager is an application for automated startup of nodes on the [Provenance Blockchain](https://docs.provenance.io/) testnet, mainnet, or localnet which can be used for testing.
 
 ## Getting Started
-Forge is available on [Pypi](https://pypi.org/project/forge.pb/) and the repo is on [GitHub](https://github.com/provenance-io/forge.pb) and can be installed using pip.
+Forge is available on [Pypi](https://pypi.org/project/forge.pb/) and the repo is on [GitHub](https://github.com/FigureTechnologies/forge.pb) and can be installed using pip.
 ```
 pip install forge.pb
 ```
