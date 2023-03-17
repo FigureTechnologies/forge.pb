@@ -13,7 +13,7 @@ setup(
     author_email='wbaker@figure.com',
     packages=['forgepb','forgepb.cmd'],
     install_requires = [requirements],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     entry_points={
         'console_scripts': [
             'forge=forgepb.command_line:start'
