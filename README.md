@@ -53,4 +53,4 @@ forge node --help
 ```
 
 ## Version Info
-* Python 3.6
+* Python 3.7
